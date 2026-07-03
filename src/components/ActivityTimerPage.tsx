@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Play, Pause, RotateCcw, Flame, Clock, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { notifications } from '../utils/notifications';
-
+import { endWorkout } from "../services/workoutService";
+import {
+  startActivity,
+  endActivity,
+  getActivityHistory,
+  getActivitySummary,
+  getActiveActivity,
+} from "../services/activityService";
 interface WorkoutHistory {
   id: number;
   date: string;
@@ -14,16 +21,41 @@ interface WorkoutHistory {
 
 export function ActivityTimerPage() {
   const navigate = useNavigate();
+  // const sessionId = localStorage.getItem("sessionId");
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [activityType, setActivityType] = useState('cardio');
   const [caloriesBurned, setCaloriesBurned] = useState(0);
-  
-  // Load workout history from localStorage
-  const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistory[]>(() => {
-    const saved = localStorage.getItem('workoutHistory');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [workoutHistory, setWorkoutHistory] = useState<any[]>([]);
+const [summary, setSummary] = useState({
+  totalWorkouts: 0,
+  totalDuration: 0,
+  totalCalories: 0,
+});
+const loadData = async () => {
+  try {
+    const history = await getActivityHistory();
+    const summary = await getActivitySummary();
+
+    setWorkoutHistory(history);
+    setSummary(summary);
+
+    try {
+      const active = await getActiveActivity();
+      setActiveWorkout(active);
+
+if (active) {
+  setIsActive(true);
+}
+      setActiveWorkout(active);
+    } catch {
+      setActiveWorkout(null);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+const [activeWorkout, setActiveWorkout] = useState<any>(null);
 
   const activities = [
     { id: 'cardio', name: 'Cardio', caloriesPerMinute: 8, color: 'bg-orange-100', textColor: 'text-orange-600' },
@@ -33,7 +65,9 @@ export function ActivityTimerPage() {
   ];
 
   const currentActivity = activities.find(a => a.id === activityType) || activities[0];
-
+useEffect(() => {
+  loadData();
+}, []);
   useEffect(() => {
     let interval: number | undefined;
 
@@ -48,37 +82,42 @@ export function ActivityTimerPage() {
 
     return () => clearInterval(interval);
   }, [isActive, seconds, currentActivity.caloriesPerMinute]);
+const handleStartPause = async () => {
+  if (!isActive) {
+    await startActivity(currentActivity.name);
 
-  const handleStartPause = () => {
-    const wasActive = isActive;
-    setIsActive(!isActive);
-    
-    if (!wasActive) {
-      // Starting the timer
-      notifications.timerStarted(currentActivity.name);
+    const active = await getActiveActivity();
+    setActiveWorkout(active);
+
+    setIsActive(true);
+  } else {
+    if (activeWorkout) {
+      await endActivity(activeWorkout.id);
     }
-  };
 
-  const handleReset = () => {
+    setActiveWorkout(null);
+    setIsActive(false);
+
+    await loadData();
+  }
+};
+
+  const handleReset =async () => {
     // Save workout if timer has been running
     if (seconds > 0 && !isActive) {
       const minutes = Math.floor(seconds / 60);
-      const newWorkout: WorkoutHistory = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        type: currentActivity.name,
-        duration: minutes,
-        calories: Math.round(caloriesBurned),
-        timestamp: Date.now(),
-      };
-      
-      const updatedHistory = [newWorkout, ...workoutHistory].slice(0, 10); // Keep last 10
-      setWorkoutHistory(updatedHistory);
-      localStorage.setItem('workoutHistory', JSON.stringify(updatedHistory));
-      
       notifications.workoutCompleted(currentActivity.name, minutes);
     }
-    
+    if (activeWorkout) {
+  await endActivity(activeWorkout.id);
+  const sessionId = localStorage.getItem("sessionId");
+
+if (sessionId) {
+  await endWorkout(Number(sessionId));
+  localStorage.removeItem("sessionId");
+}
+}
+await loadData();
     setSeconds(0);
     setIsActive(false);
     setCaloriesBurned(0);
@@ -91,25 +130,12 @@ export function ActivityTimerPage() {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const recentWorkouts = [
-    { date: 'Today', type: 'Cardio', duration: '32 min', calories: 256 },
-    { date: 'Yesterday', type: 'Strength', duration: '45 min', calories: 270 },
-    { date: '2 days ago', type: 'Yoga', duration: '30 min', calories: 90 },
-  ];
+// const active = await getActiveActivity();
 
-  // Calculate weekly totals
-  const getWeeklyStats = () => {
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const weeklyWorkouts = workoutHistory.filter(w => w.timestamp >= oneWeekAgo);
-    
-    return {
-      count: weeklyWorkouts.length,
-      totalCalories: weeklyWorkouts.reduce((sum, w) => sum + w.calories, 0),
-      totalMinutes: weeklyWorkouts.reduce((sum, w) => sum + w.duration, 0),
-    };
-  };
-  
-  const weeklyStats = getWeeklyStats();
+// if (active) {
+//   setActiveWorkout(active);
+//   setIsActive(true);
+// }
 
   return (
     <div className="min-h-screen p-4 md:p-8 pb-24 md:pb-8">
@@ -228,35 +254,40 @@ export function ActivityTimerPage() {
           <div className="bg-white rounded-3xl p-6 shadow-sm">
             <h2 className="text-sky-900 mb-6">Recent Workouts</h2>
             <div className="space-y-4">
-              {workoutHistory.length > 0 ? (
-                workoutHistory.slice(0, 5).map((workout) => (
-                  <div key={workout.id} className="p-4 bg-sky-50 rounded-2xl">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm text-sky-600">{workout.date}</p>
-                      <span className="px-2 py-1 bg-white rounded-lg text-xs text-sky-900">
-                        {workout.type}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-1 text-sky-600">
-                        <Clock className="w-4 h-4" />
-                        <span>{workout.duration} min</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-sky-600">
-                        <Flame className="w-4 h-4" />
-                        <span>{workout.calories} kcal</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-6 text-center bg-sky-50 rounded-2xl">
-                  <p className="text-sm text-sky-600">
-                    No workouts yet. Start a timer to track your first workout!
-                  </p>
-                </div>
-              )}
-            </div>
+  {workoutHistory.length > 0 ? (
+    workoutHistory.slice(0, 5).map((workout, index) => (
+      <div key={index} className="p-4 bg-sky-50 rounded-2xl">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-sky-600">
+            {new Date(workout.date).toLocaleDateString()}
+          </p>
+
+          <span className="px-2 py-1 bg-white rounded-lg text-xs text-sky-900">
+            {workout.activityType}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-1 text-sky-600">
+            <Clock className="w-4 h-4" />
+            <span>{Math.floor(workout.duration / 60)} min</span>
+          </div>
+
+          <div className="flex items-center gap-1 text-sky-600">
+            <Flame className="w-4 h-4" />
+            <span>{workout.caloriesBurned} kcal</span>
+          </div>
+        </div>
+      </div>
+    ))
+  ) : (
+    <div className="p-6 text-center bg-sky-50 rounded-2xl">
+      <p className="text-sm text-sky-600">
+        No workouts yet. Start a timer to track your first workout!
+      </p>
+    </div>
+  )}
+</div>
 
             {/* Stats Summary */}
             <div className="mt-6 pt-6 border-t border-sky-100">
@@ -264,18 +295,20 @@ export function ActivityTimerPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-sky-50 rounded-2xl p-3 text-center">
                   <TrendingUp className="w-4 h-4 text-sky-600 mx-auto mb-1" />
-                  <p className="text-2xl text-sky-900 mb-1">{weeklyStats.count}</p>
+                  <p className="text-2xl text-sky-900 mb-1">{summary.totalWorkouts}</p>
                   <p className="text-xs text-sky-600">Workouts</p>
                 </div>
                 <div className="bg-sky-50 rounded-2xl p-3 text-center">
                   <Flame className="w-4 h-4 text-orange-500 mx-auto mb-1" />
-                  <p className="text-2xl text-sky-900 mb-1">{weeklyStats.totalCalories}</p>
+                  <p className="text-2xl text-sky-900 mb-1">{summary.totalCalories}</p>
                   <p className="text-xs text-sky-600">kcal</p>
                 </div>
               </div>
-              {weeklyStats.totalMinutes > 0 && (
+              {summary.totalDuration > 0 && (
                 <div className="mt-3 bg-mint-100 rounded-2xl p-3 text-center">
-                  <p className="text-2xl text-mint-900 mb-1">{weeklyStats.totalMinutes}</p>
+                  <p className="text-2xl text-mint-900 mb-1">
+                    {Math.floor(summary.totalDuration / 60)}m {summary.totalDuration % 60}s
+                  </p>
                   <p className="text-xs text-mint-600">Total Minutes</p>
                 </div>
               )}

@@ -2,84 +2,81 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Wind, Play, Pause, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { notifications } from '../utils/notifications';
+import { getAllBreathing } from "../services/breathingService";
 
 export function BreathingPage() {
   const navigate = useNavigate();
-  const [selectedExercise, setSelectedExercise] = useState('box');
+const [selectedExercise, setSelectedExercise] = useState(1);
+const [exercises, setExercises] = useState<any[]>([]);
   const [isActive, setIsActive] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [phase, setPhase] = useState('Inhale');
+const getPhases = (pattern: string) => {
+  const names = ["Inhale", "Hold", "Exhale", "Hold"];
 
-  const exercises = [
-    {
-      id: 'box',
-      name: 'Box Breathing',
-      pattern: 'Inhale 4s → Hold 4s → Exhale 4s → Hold 4s',
-      duration: '5 min',
-      benefits: 'Reduces stress and improves focus',
-      phases: [
-        { name: 'Inhale', duration: 4 },
-        { name: 'Hold', duration: 4 },
-        { name: 'Exhale', duration: 4 },
-        { name: 'Hold', duration: 4 },
-      ],
-    },
-    {
-      id: '4-7-8',
-      name: '4-7-8 Breathing',
-      pattern: 'Inhale 4s → Hold 7s → Exhale 8s',
-      duration: '3 min',
-      benefits: 'Promotes relaxation and better sleep',
-      phases: [
-        { name: 'Inhale', duration: 4 },
-        { name: 'Hold', duration: 7 },
-        { name: 'Exhale', duration: 8 },
-      ],
-    },
-    {
-      id: 'deep',
-      name: 'Deep Breathing',
-      pattern: 'Slow deep breaths for 5 minutes',
-      duration: '5 min',
-      benefits: 'Calms the nervous system',
-      phases: [
-        { name: 'Inhale', duration: 5 },
-        { name: 'Exhale', duration: 5 },
-      ],
-    },
-  ];
+  return pattern.split("-").map((time, index) => ({
+    name: names[index] || "Hold",
+    duration: Number(time),
+  }));
+};
 
-  const currentExercise = exercises.find((ex) => ex.id === selectedExercise) || exercises[0];
+  const currentExercise = exercises.find(
+  (ex) => ex.id === selectedExercise
+);
+const phases = currentExercise
+  ? getPhases(currentExercise.pattern)
+  : [];
 
-  useEffect(() => {
-    let interval: number | undefined;
 
-    if (isActive) {
-      interval = window.setInterval(() => {
-        setSeconds((s) => s + 1);
-      }, 1000);
+useEffect(() => {
+  let interval: number | undefined;
+
+  if (isActive) {
+    interval = window.setInterval(() => {
+      setSeconds((s) => s + 1);
+    }, 1000);
+  }
+
+  return () => clearInterval(interval);
+}, [isActive]);
+
+useEffect(() => {
+  if (!isActive || phases.length === 0) return;
+
+  const totalCycleDuration = phases.reduce(
+    (sum, p) => sum + p.duration,
+    0
+  );
+
+  const cyclePosition = seconds % totalCycleDuration;
+
+  let accumulated = 0;
+
+  for (const item of phases) {
+    if (cyclePosition < accumulated + item.duration) {
+      setPhase(item.name);
+      break;
     }
 
-    return () => clearInterval(interval);
-  }, [isActive]);
+    accumulated += item.duration;
+  }
+}, [seconds, isActive, phases]);
+useEffect(() => {
+  loadExercises();
+}, []);
 
-  // Calculate current phase
-  useEffect(() => {
-    if (isActive) {
-      const totalCycleDuration = currentExercise.phases.reduce((sum, p) => sum + p.duration, 0);
-      const cyclePosition = seconds % totalCycleDuration;
-      
-      let accumulated = 0;
-      for (const phase of currentExercise.phases) {
-        if (cyclePosition < accumulated + phase.duration) {
-          setPhase(phase.name);
-          break;
-        }
-        accumulated += phase.duration;
-      }
+const loadExercises = async () => {
+  try {
+    const data = await getAllBreathing();
+    setExercises(data);
+
+    if (data.length > 0) {
+      setSelectedExercise(data[0].id);
     }
-  }, [seconds, isActive, currentExercise]);
-
+  } catch (err) {
+    console.error(err);
+  }
+};
   const handleReset = () => {
     if (isActive && seconds > 0) {
       notifications.breathingCompleted();
@@ -97,7 +94,6 @@ export function BreathingPage() {
       notifications.breathingStarted();
     }
   };
-
   return (
     <div className="min-h-screen p-4 md:p-8 pb-24 md:pb-8">
       {/* Header */}
@@ -136,11 +132,11 @@ export function BreathingPage() {
                 <div className="flex items-start justify-between mb-2">
                   <h4 className="text-sky-900">{exercise.name}</h4>
                   <span className="text-xs text-sky-600 bg-sky-50 px-2 py-1 rounded-lg">
-                    {exercise.duration}
+                    {exercise.duration} min
                   </span>
                 </div>
                 <p className="text-sm text-sky-600 mb-1">{exercise.pattern}</p>
-                <p className="text-xs text-sky-500">{exercise.benefits}</p>
+                <p className="text-xs text-sky-500">{exercise.benefit}</p>
               </button>
             ))}
           </div>
@@ -154,9 +150,14 @@ export function BreathingPage() {
                 <Wind className="w-6 h-6 text-sky-600" />
               </div>
               <div>
-                <h2 className="text-sky-900">{currentExercise.name}</h2>
-                <p className="text-sm text-sky-600">{currentExercise.pattern}</p>
-              </div>
+                <h2 className="text-sky-900">
+  {currentExercise?.name}
+</h2>
+
+<p className="text-sm text-sky-600">
+  {currentExercise?.pattern}
+</p>
+</div>
             </div>
 
             {/* Breathing Animation */}
@@ -211,7 +212,7 @@ export function BreathingPage() {
             {/* Info */}
             <div className="mt-6 p-4 bg-sky-50 rounded-2xl">
               <p className="text-sm text-sky-900">
-                💡 <strong>Tip:</strong> {currentExercise.benefits}. Practice daily for best results.
+                💡 <strong>Tip:</strong> {currentExercise?.benefit}. Practice daily for best results.
               </p>
             </div>
           </div>

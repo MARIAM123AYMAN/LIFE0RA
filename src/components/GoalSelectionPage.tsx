@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target, TrendingDown, Dumbbell, Footprints, Heart, Zap, HeartPulse, Trophy, ArrowLeft } from 'lucide-react';
 import { notifications } from '../utils/notifications';
+import { useApp } from '../contexts/AppContext';
 
 export function GoalSelectionPage() {
+  const { setFitnessGoal } = useApp();
   const navigate = useNavigate();
   const [selectedGoal, setSelectedGoal] = useState('');
 
@@ -72,7 +74,9 @@ export function GoalSelectionPage() {
       const goalData = goals.find(g => g.id === selectedGoal);
       if (goalData) {
         // Save goal to localStorage
-        localStorage.setItem('fitnessGoal', goalData.name);
+       setFitnessGoal(goalData.name);
+localStorage.setItem("fitnessGoal", goalData.name);
+localStorage.setItem("fitnessGoalId", goalData.id);
         notifications.goalSet(goalData.name);
         navigate('/sports');
       }

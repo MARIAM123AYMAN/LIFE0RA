@@ -1,16 +1,26 @@
-import { Droplets } from 'lucide-react';
+import { Droplets, GlassWater } from 'lucide-react';
 
 interface WaterProgressRingProps {
   current: number;
   target: number;
   selectedDate: string;
+  cups: number;
 }
 
-export function WaterProgressRing({ current, target, selectedDate }: WaterProgressRingProps) {
+export function WaterProgressRing({ current, target, selectedDate , cups}: WaterProgressRingProps) {
   const percentage = Math.min((current / target) * 100, 100);
   const circumference = 2 * Math.PI * 90;
+  
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
+
+let ringColor = "#0ea5e9"; // أزرق
+
+if (percentage >= 100 && percentage <= 120) {
+  ringColor = "#22c55e"; // أخضر
+} else if (percentage > 120) {
+  ringColor = "#ef4444"; // أحمر
+}
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -50,18 +60,18 @@ export function WaterProgressRing({ current, target, selectedDate }: WaterProgre
               fill="none"
             />
             {/* Progress Circle */}
-            <circle
-              cx="96"
-              cy="96"
-              r="90"
-              stroke="#0ea5e9"
-              strokeWidth="12"
-              fill="none"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              className="transition-all duration-500"
-            />
+      <circle
+  cx="96"
+  cy="96"
+  r="90"
+  stroke={ringColor}
+  strokeWidth="12"
+  fill="none"
+  strokeDasharray={circumference}
+  strokeDashoffset={strokeDashoffset}
+  strokeLinecap="round"
+  className="transition-all duration-500"
+/>
           </svg>
           
           {/* Center Text */}
@@ -75,9 +85,28 @@ export function WaterProgressRing({ current, target, selectedDate }: WaterProgre
 
         {/* Percentage */}
         <div className="mt-6">
-          <p className="text-xl text-sky-700">{Math.round(percentage)}% Complete</p>
-        </div>
+          <p
+  className="text-xl"
+  style={{ color: ringColor }}
+>
+  {Math.round(percentage)}% Complete
+</p></div>
       </div>
+<div className="mt-6 flex flex-wrap justify-center gap-3">
+  {Array.from({ length: Math.ceil(target/ 250) }).map((_, index) => (
+    <GlassWater
+      key={index}
+      className={`
+        w-7 h-7 transition-all
+        ${
+          index < cups
+            ? "text-sky-500"
+            : "text-sky-200"
+        }
+      `}
+    />
+  ))}
+</div>
     </div>
   );
 }

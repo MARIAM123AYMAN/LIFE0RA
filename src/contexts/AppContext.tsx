@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface AppContextType {
   darkMode: boolean;
   language: 'en' | 'ar';
+  fitnessGoal: string;
+  setFitnessGoal: React.Dispatch<React.SetStateAction<string>>;
   toggleDarkMode: () => void;
   toggleLanguage: () => void;
   setDarkMode: (value: boolean) => void;
@@ -15,6 +17,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkModeState] = useState(() => {
     return localStorage.getItem('darkMode') === 'true';
   });
+  const [fitnessGoal, setFitnessGoal] = useState(
+  localStorage.getItem("fitnessGoal") || ""
+);
   
   const [language, setLanguageState] = useState<'en' | 'ar'>(() => {
     return (localStorage.getItem('language') as 'en' | 'ar') || 'en';
@@ -62,6 +67,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{ 
       darkMode, 
       language, 
+        fitnessGoal,
+    setFitnessGoal,
       toggleDarkMode, 
       toggleLanguage,
       setDarkMode,

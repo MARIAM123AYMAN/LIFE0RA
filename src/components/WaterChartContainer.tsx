@@ -13,44 +13,31 @@ interface DailyWaterData {
 }
 
 interface WaterChartContainerProps {
-  waterData: DailyWaterData;
+  waterData: any;
   targetWater: number;
 }
 
 export function WaterChartContainer({ waterData, targetWater }: WaterChartContainerProps) {
   // Generate last 7 days data
-  const getLast7DaysData = () => {
-    const data = [];
-    const today = new Date();
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      const dayLogs = waterData[dateStr] || [];
-      const totalAmount = dayLogs.reduce((sum, log) => sum + log.amount, 0);
-      
-      data.push({
-        day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        amount: totalAmount,
-        date: dateStr,
-      });
-    }
-    
-    return data;
-  };
 
-  const weeklyData = getLast7DaysData();
-  const totalWeekly = weeklyData.reduce((sum, day) => sum + day.amount, 0);
-  const averageDaily = Math.round(totalWeekly / 7);
+const chartData =
+  waterData?.days?.map((day: any) => ({
+    day: day.dayName,
+    amount: day.totalMl,
+  })) || [];
+ const totalWeekly = chartData.reduce(
+  (sum: number, day: any) =>
+    sum + day.amount,
+  0
+);
+const averageDaily = Math.round(totalWeekly / 7);
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-md">
       <h2 className="text-sky-900 mb-6">Weekly Hydration</h2>
       
       <ResponsiveContainer width="100%" height={250}>
-        <BarChart data={weeklyData}>
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e0f2fe" />
           <XAxis
             dataKey="day"

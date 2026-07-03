@@ -1,67 +1,70 @@
 import { ArrowLeft, Play, Clock, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import { useEffect, useState } from "react";
+import { getWorkoutVideos } from "../services/workoutVideoService";
+import { getOnboardingResult } from "../services/onboardingService";
 export function VideosPage() {
   const navigate = useNavigate();
-  const currentGoal = localStorage.getItem('fitnessGoal') || 'Stay Healthy';
+const [currentGoal, setCurrentGoal] = useState("");
 
-  const videoPlaylists = [
-    {
-      title: 'Fat Burning HIIT',
-      duration: '25 min',
-      difficulty: 'Intermediate',
-      calories: 320,
-      thumbnail: '🔥',
-      category: 'Lose Weight',
-      instructor: 'Sarah Johnson',
-    },
-    {
-      title: 'Full Body Strength',
-      duration: '40 min',
-      difficulty: 'Advanced',
-      calories: 280,
-      thumbnail: '💪',
-      category: 'Gain Muscle',
-      instructor: 'Mike Ross',
-    },
-    {
-      title: 'Walking Workout',
-      duration: '30 min',
-      difficulty: 'Beginner',
-      calories: 150,
-      thumbnail: '🚶',
-      category: 'Walk & Stay Active',
-      instructor: 'Emma Davis',
-    },
-    {
-      title: 'Yoga Flow',
-      duration: '20 min',
-      difficulty: 'Beginner',
-      calories: 100,
-      thumbnail: '🧘',
-      category: 'Reduce Stress',
-      instructor: 'Anna Chen',
-    },
-    {
-      title: 'Core & Abs Blaster',
-      duration: '15 min',
-      difficulty: 'Intermediate',
-      calories: 180,
-      thumbnail: '🎯',
-      category: 'Improve Fitness',
-      instructor: 'Tom Wilson',
-    },
-    {
-      title: 'Cardio Dance Party',
-      duration: '35 min',
-      difficulty: 'Beginner',
-      calories: 250,
-      thumbnail: '💃',
-      category: 'Lose Weight',
-      instructor: 'Lisa Park',
-    },
-  ];
+  const [videos, setVideos] = useState<any[]>([]);
+useEffect(() => {
+  loadVideos();
+}, []);
+const getYoutubeThumbnail = (url: string) => {
+  const videoId = url.split("v=")[1]?.split("&")[0];
 
+  return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+};
+const loadVideos = async () => {
+  try {
+     const profile = await getOnboardingResult();
+  setCurrentGoal(profile.goal);
+    const data = await getWorkoutVideos();
+
+    console.log("Videos =", data);
+
+    const allVideos = await getWorkoutVideos();
+  setVideos(allVideos);
+  } catch (err) {
+    console.log(err);
+  }
+};
+// if data in back goals is added##############################
+// const filteredVideos = videos.filter(
+//   (video: any) => video.goal === currentGoal
+// );
+
+const filteredVideos = videos.filter((video: any) => {
+  if (currentGoal === "Lose Weight") {
+    return (
+      video.title.toLowerCase().includes("fat") ||
+      video.title.toLowerCase().includes("cardio") ||
+      video.title.toLowerCase().includes("hiit") ||
+      video.title.toLowerCase().includes("running")
+    );
+  }
+
+  if (currentGoal === "Gain Muscle") {
+    return (
+      video.title.toLowerCase().includes("strength") ||
+      video.title.toLowerCase().includes("upper") ||
+      video.title.toLowerCase().includes("lower") ||
+      video.title.toLowerCase().includes("abs")
+    );
+  }
+
+  if (currentGoal === "Reduce Stress") {
+    return (
+      video.title.toLowerCase().includes("yoga") ||
+      video.title.toLowerCase().includes("stretch") ||
+      video.title.toLowerCase().includes("mobility") ||
+      video.title.toLowerCase().includes("pilates")
+    );
+  }
+
+  return true;
+});
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'Beginner':
@@ -95,23 +98,25 @@ export function VideosPage() {
 
       {/* Videos Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {videoPlaylists.map((video, index) => (
+      {filteredVideos.map((video: any) => (
           <div
-            key={index}
+          key={video.id}
+          onClick={() => window.open(video.videoUrl, "_blank")}
             className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group"
           >
-            {/* Video Thumbnail */}
-            <div className="relative w-full h-48 bg-sky-50 flex items-center justify-center text-6xl">
-              {video.thumbnail}
-              <div className="absolute inset-0 bg-sky-900/10 group-hover:bg-sky-900/20 transition-all flex items-center justify-center">
-                <div 
-                  className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform"
-                  title="Play video"
-                >
-                  <Play className="w-8 h-8 text-sky-600 ml-1" />
-                </div>
-              </div>
-            </div>
+            <div className="relative w-full h-48">
+  <img
+    src={getYoutubeThumbnail(video.videoUrl)}
+    alt={video.title}
+    className="w-full h-full object-cover"
+  />
+
+  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+    <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
+      <Play className="w-8 h-8 text-red-600 ml-1" />
+    </div>
+  </div>
+</div>
 
             {/* Video Info */}
             <div className="p-6">
@@ -125,12 +130,12 @@ export function VideosPage() {
               </div>
 
               <h3 className="text-sky-900 mb-2">{video.title}</h3>
-              <p className="text-sm text-sky-600 mb-4">with {video.instructor}</p>
+              <p className="text-sm text-sky-600 mb-4">with {video.trainer}</p>
 
               <div className="flex items-center justify-between text-sm text-sky-600">
                 <div className="flex items-center gap-1" title="Video duration">
                   <Clock className="w-4 h-4" />
-                  <span>{video.duration}</span>
+                  <span>{video.duration} min</span>
                 </div>
                 <div className="flex items-center gap-1" title="Estimated calories burned">
                   <Flame className="w-4 h-4" />

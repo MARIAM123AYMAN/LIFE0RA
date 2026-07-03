@@ -1,11 +1,13 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, RadialBarChart, RadialBar, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-
+import { useApp } from '../contexts/AppContext';
+import { t } from '../utils/translations';
 interface NutritionChartsProps {
   totalCalories: number;
   targetCalories: number;
   protein: number;
   carbs: number;
   fats: number;
+  timelineData: any[];
 }
 
 export function NutritionCharts({
@@ -14,12 +16,14 @@ export function NutritionCharts({
   protein,
   carbs,
   fats,
+  timelineData,
 }: NutritionChartsProps) {
+  const { language } = useApp();
   // Data for macros pie chart
   const macrosData = [
-    { name: 'Protein', value: protein, color: '#0ea5e9' },
-    { name: 'Carbs', value: carbs, color: '#10b981' },
-    { name: 'Fats', value: fats, color: '#a855f7' },
+    { name: t('protein', language), value: protein, color: '#0ea5e9' },
+    { name: t('carbs', language), value: carbs, color: '#10b981' },
+    { name: t('fats', language), value: fats, color: '#a855f7' },
   ];
 
   // Data for calories radial chart
@@ -32,14 +36,7 @@ export function NutritionCharts({
   ];
 
   // Mock timeline data
-  const timelineData = [
-    { time: '8:00', calories: 180 },
-    { time: '10:00', calories: 260 },
-    { time: '12:00', calories: 420 },
-    { time: '14:00', calories: 420 },
-    { time: '16:00', calories: 420 },
-    { time: '18:00', calories: totalCalories },
-  ];
+
 
   const percentage = Math.round((totalCalories / targetCalories) * 100);
 
@@ -53,8 +50,8 @@ export function NutritionCharts({
             <RadialBarChart
               cx="50%"
               cy="50%"
-              innerRadius="60%"
-              outerRadius="90%"
+              innerRadius="70%"
+              outerRadius="100%"
               barSize={20}
               data={caloriesData}
               startAngle={90}
@@ -72,7 +69,7 @@ export function NutritionCharts({
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <p className="text-4xl text-sky-900 mb-1">{percentage}%</p>
-              <p className="text-sm text-sky-600">of target</p>
+              <p className="text-sm text-sky-600">{t("ofTarget", language)}</p>
             </div>
           </div>
         </div>
@@ -89,6 +86,7 @@ export function NutritionCharts({
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie
+              label
               data={macrosData}
               cx="50%"
               cy="50%"
@@ -126,7 +124,7 @@ export function NutritionCharts({
           <LineChart data={timelineData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e0f2fe" />
             <XAxis
-              dataKey="time"
+              dataKey="meal"
               stroke="#0ea5e9"
               style={{ fontSize: '12px' }}
             />

@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
-
+import { askCoach  } from "../services/chatbotService";
+import { useApp } from '../contexts/AppContext';
 export function ChatbotUI() {
   const [isOpen, setIsOpen] = useState(false);
+  const { language } = useApp();
+  // const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([
     {
       text: "Hi! I'm your AI fitness coach. How can I help you today?",
@@ -18,50 +21,79 @@ export function ChatbotUI() {
     'How to stay motivated?',
   ];
 
-  const handleQuickQuestion = (question: string) => {
-    // Add user message
-    setMessages((prev) => [...prev, { text: question, isUser: true }]);
-
+ 
     // Simulate AI response
-    setTimeout(() => {
-      const responses = {
-        'What workout should I do?':
-          'Based on your goal, I recommend starting with 30 minutes of cardio. Check the Smart Coach panel for your personalized plan!',
-        'What should I eat?':
-          'For your fitness goal, focus on lean proteins, whole grains, and plenty of vegetables. Check the Meals section for detailed nutrition tracking.',
-        'How many times should I train?':
-          'For best results, aim for 3-5 workouts per week with rest days in between. Listen to your body and avoid overtraining.',
-        'How to stay motivated?':
-          'Set small, achievable goals and track your progress. Celebrate every milestone, no matter how small!',
-      };
+const handleQuickQuestion = async (question: string) => {
+  setMessages(prev => [...prev, { text: question, isUser: true }]);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: responses[question as keyof typeof responses] || 'Great question! Let me help you with that.',
-          isUser: false,
-        },
-      ]);
-    }, 1000);
-  };
+  try {
+    const reply = await askCoach(question);
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+    setMessages(prev => [
+      ...prev,
+      {
+        text: reply,
+        isUser: false,
+      },
+    ]);
+  } catch {
+    setMessages(prev => [
+      ...prev,
+      {
+        text: "Sorry, I couldn't answer right now.",
+        isUser: false,
+      },
+    ]);
+  }
+};
+// const userContext = {
+//   goal: localStorage.getItem("goal") || "Unknown",
+//   age: localStorage.getItem("age") || "Unknown",
+//   weight: localStorage.getItem("weight") || "Unknown",
+//   height: localStorage.getItem("height") || "Unknown",
+//   steps: localStorage.getItem("steps") || "Unknown",
+//   water: localStorage.getItem("water") || "Unknown",
+//   calories: localStorage.getItem("calories") || "Unknown",
+//   workout: localStorage.getItem("lastWorkout") || "Unknown",
+// };
+const handleSendMessage = async () => {
+  if (!inputValue.trim()) return;
 
-    setMessages((prev) => [...prev, { text: inputValue, isUser: true }]);
-    setInputValue('');
+  const userMessage = inputValue;
 
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: "I'm here to help! Based on your message, I recommend checking your personalized workout plan in the Smart Coach panel.",
-          isUser: false,
-        },
-      ]);
-    }, 1000);
-  };
+  setMessages((prev) => [
+    ...prev,
+    {
+      text: userMessage,
+      isUser: true,
+    },
+  ]);
+
+  setInputValue("");
+
+  try {
+
+const reply = await askCoach(userMessage);
+
+setMessages((prev) => [
+  ...prev,
+  {
+    text: reply,
+    isUser: false,
+  },
+]);
+  } catch (error) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        text: "Sorry, I couldn't answer right now.",
+        isUser: false,
+      },
+    ]);
+
+    console.error(error);
+  }
+};
 
   return (
     <>
@@ -93,7 +125,6 @@ export function ChatbotUI() {
               </div>
             </div>
           </div>
-
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((message, index) => (

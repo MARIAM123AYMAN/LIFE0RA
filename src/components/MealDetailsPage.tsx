@@ -1,23 +1,45 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Coffee, Sun, Moon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AddMealModal } from './AddMealModal';
 import { NutritionCharts } from './NutritionCharts';
 import { notifications } from '../utils/notifications';
+import { useApp } from '../contexts/AppContext';
+import { t } from '../utils/translations';
 
 export function MealDetailsPage() {
+  const { language } = useApp();
   const { mealType } = useParams();
+const userEmail = localStorage.getItem("userEmail");
+
+const [selectedDate, setSelectedDate] =
+  useState(
+    localStorage.getItem("selectedDate") ||
+    new Date().toISOString().split("T")[0]
+  );
+
+const mealsKey =
+`${mealType}Meals_${userEmail}_${selectedDate}`;
+console.log("DETAILS KEY:", mealsKey);
+console.log(
+  "DETAILS DATA:",
+  localStorage.getItem(mealsKey)
+);
+console.log("DATE =", selectedDate);
+console.log("KEY =", mealsKey);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [meals, setMeals] = useState([
-    { id: 1, name: 'Scrambled Eggs', quantity: '2 eggs', calories: 180, protein: 12, carbs: 2, fats: 12 },
-    { id: 2, name: 'Whole Wheat Toast', quantity: '2 slices', calories: 160, protein: 8, carbs: 28, fats: 2 },
-    { id: 3, name: 'Orange Juice', quantity: '250ml', calories: 80, protein: 1, carbs: 18, fats: 0 },
-  ]);
+  const [meals, setMeals] = useState<any[]>([]);
 
   const getMealInfo = (type: string | undefined) => {
     switch (type) {
-      case 'breakfast':
-        return { name: 'Breakfast', icon: Coffee, color: 'from-amber-400 to-orange-400', target: 500 };
+     case 'breakfast':
+  return {
+    name: t('breakfast', language),
+    icon: Coffee,
+    color: 'from-amber-400 to-orange-400',
+    target: 500,
+  };
       case 'lunch':
         return { name: 'Lunch', icon: Sun, color: 'from-sky-400 to-blue-400', target: 700 };
       case 'dinner':
@@ -35,41 +57,54 @@ export function MealDetailsPage() {
   const totalCarbs = meals.reduce((sum, meal) => sum + meal.carbs, 0);
   const totalFats = meals.reduce((sum, meal) => sum + meal.fats, 0);
 
-  const handleAddMeal = (newMeal: any) => {
-    const updatedMeals = [...meals, { ...newMeal, id: meals.length + 1 }];
-    setMeals(updatedMeals);
-    setIsModalOpen(false);
-    
-    // Show notification
-    notifications.mealAdded(newMeal.name, newMeal.calories);
-    
-    // Check if calorie goal is reached
-    const totalCals = updatedMeals.reduce((sum, meal) => sum + meal.calories, 0);
-    if (totalCals >= 2000 && totalCalories < 2000) {
-      notifications.calorieGoalReached();
-    } else if (totalCals > 2000) {
-      notifications.calorieGoalExceeded();
-    }
-    
-    // Update localStorage
-    localStorage.setItem('dailyCalories', totalCals.toString());
-  };
-
+const handleAddMeal = (newMeal: any) => {
+  const updatedMeals = [...meals,{...newMeal,id: Date.now(),},];
+  setMeals(updatedMeals);
+  console.log("DETAIL SAVE KEY =", mealsKey);
+  localStorage.setItem(
+    mealsKey,
+    JSON.stringify(updatedMeals)
+  );
+  setIsModalOpen(false);
+  notifications.mealAdded(
+    newMeal.name,
+    newMeal.calories
+  );
+  const totalCals = updatedMeals.reduce(
+    (sum, meal) => sum + meal.calories,0);
+  localStorage.setItem("dailyCalories",totalCals.toString());};
+// delete
   const handleDeleteMeal = (mealId: number) => {
-    const mealToDelete = meals.find(m => m.id === mealId);
-    const updatedMeals = meals.filter((meal) => meal.id !== mealId);
-    setMeals(updatedMeals);
-    
-    if (mealToDelete) {
-      notifications.mealDeleted(mealToDelete.name);
-      
-      // Update localStorage
-      const totalCals = updatedMeals.reduce((sum, meal) => sum + meal.calories, 0);
-      localStorage.setItem('dailyCalories', totalCals.toString());
-    }
-  };
+  const mealToDelete = meals.find((m) => m.id === mealId);
+  const updatedMeals = meals.filter((meal) => meal.id !== mealId);
+  setMeals(updatedMeals);
+  localStorage.setItem(mealsKey,JSON.stringify(updatedMeals));
+  if (mealToDelete) {
+    notifications.mealDeleted(
+      mealToDelete.name
+    );
+  }
+  const totalCals = updatedMeals.reduce((sum, meal) => sum + meal.calories,0);
+  localStorage.setItem("dailyCalories",totalCals.toString());};
+//  data
+  useEffect(() => {
+        const savedMeals = JSON.parse(
+        localStorage.getItem(mealsKey) || "[]"
+        );
 
-  return (
+  setMeals(savedMeals);
+}, [mealsKey]);
+  //  time line
+const timelineData = meals.map((meal, index) => ({
+  meal: meal.name,
+  calories: meal.calories,
+}));
+console.log(mealsKey);
+console.log(
+  "DETAILS DATE",
+  localStorage.getItem("selectedDate")
+);
+return (
     <div className="min-h-screen p-4 md:p-8">
       {/* Header */}
       <div className="mb-8">
@@ -78,7 +113,7 @@ export function MealDetailsPage() {
           className="inline-flex items-center gap-2 text-sky-600 hover:text-sky-700 transition-colors mb-4"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Back to Meals</span>
+          <span>{t("backToMeals", language)}</span>
         </Link>
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -99,7 +134,7 @@ export function MealDetailsPage() {
             className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-mint-500 text-white hover:from-sky-600 hover:to-mint-600 transition-all shadow-sm"
           >
             <Plus className="w-5 h-5" />
-            <span>Add Meal</span>
+            <span>{t("addMeal", language)}</span>
           </button>
         </div>
 
@@ -113,17 +148,17 @@ export function MealDetailsPage() {
             </div>
             <div>
               <p className="text-xs text-sky-700 mb-2">Protein</p>
-              <p className="text-2xl text-sky-900">{totalProtein}</p>
+              <p className="text-2xl text-sky-900"> {Number(totalProtein.toFixed(1))}</p>
               <p className="text-xs text-sky-600">grams</p>
             </div>
             <div>
               <p className="text-xs text-sky-700 mb-2">Carbs</p>
-              <p className="text-2xl text-sky-900">{totalCarbs}</p>
+              <p className="text-2xl text-sky-900">  {Number(totalCarbs.toFixed(1))}</p>
               <p className="text-xs text-sky-600">grams</p>
             </div>
             <div>
               <p className="text-xs text-sky-700 mb-2">Fats</p>
-              <p className="text-2xl text-sky-900">{totalFats}</p>
+              <p className="text-2xl text-sky-900">  {Number(totalFats.toFixed(1))}</p>
               <p className="text-xs text-sky-600">grams</p>
             </div>
           </div>
@@ -134,11 +169,11 @@ export function MealDetailsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Meals List */}
         <div>
-          <h2 className="text-sky-900 mb-4">Eaten Meals</h2>
+          <h2 className="text-sky-900 mb-4">{t("eatenMeals", language)}</h2>
           <div className="space-y-3">
             {meals.length === 0 ? (
               <div className="bg-white rounded-3xl p-8 text-center shadow-sm">
-                <p className="text-sky-600">No meals added yet. Click "Add Meal" to start tracking.</p>
+                <p className="text-sky-600">{t("noMealsAdded", language)}</p>
               </div>
             ) : (
               meals.map((meal) => (
@@ -166,15 +201,15 @@ export function MealDetailsPage() {
                     </div>
                     <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50">
                       <p className="text-xs text-sky-700 mb-1">Protein</p>
-                      <p className="text-sky-900">{meal.protein}g</p>
+                      <p className="text-sky-900">  {Number(meal.protein?.toFixed?.(1) ?? meal.protein)}g</p>
                     </div>
                     <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
                       <p className="text-xs text-green-700 mb-1">Carbs</p>
-                      <p className="text-green-900">{meal.carbs}g</p>
+                      <p className="text-green-900">  {Number(meal.carbs?.toFixed?.(1) ?? meal.carbs)}g</p>
                     </div>
                     <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50">
                       <p className="text-xs text-purple-700 mb-1">Fats</p>
-                      <p className="text-purple-900">{meal.fats}g</p>
+                      <p className="text-purple-900">  {Number(meal.fats?.toFixed?.(1) ?? meal.fats)}g</p>
                     </div>
                   </div>
                 </div>
@@ -185,11 +220,12 @@ export function MealDetailsPage() {
 
         {/* Nutrition Charts */}
         <NutritionCharts
-          totalCalories={totalCalories}
-          targetCalories={mealInfo.target}
-          protein={totalProtein}
-          carbs={totalCarbs}
-          fats={totalFats}
+            totalCalories={totalCalories}
+            targetCalories={mealInfo.target}
+            protein={totalProtein}
+            carbs={totalCarbs}
+            fats={totalFats}
+            timelineData={timelineData}
         />
       </div>
 

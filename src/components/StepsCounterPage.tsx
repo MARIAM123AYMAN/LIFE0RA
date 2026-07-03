@@ -3,93 +3,144 @@ import { ArrowLeft, Footprints, Target, TrendingUp, Calendar, Play, Pause, Rotat
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
-
+import {
+  getTodaySteps,
+  getWeeklySteps,
+  addStep,
+  resetSteps,
+} from "../services/stepsService";
 export function StepsCounterPage() {
   const navigate = useNavigate();
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
   const { language } = useApp();
-  const dailyGoal = parseInt(localStorage.getItem('dailyStepsGoal') || '10000');
+
   
   // Get today's steps from localStorage
-  const [todaySteps, setTodaySteps] = useState(() => {
-    const saved = localStorage.getItem('todaySteps');
-    const lastDate = localStorage.getItem('lastStepsDate');
-    const today = new Date().toDateString();
-    
-    // Reset if it's a new day
-    if (lastDate !== today) {
-      localStorage.setItem('lastStepsDate', today);
-      localStorage.setItem('todaySteps', '0');
-      return 0;
-    }
-    
-    return saved ? parseInt(saved) : 0;
-  });
+
   
-  const [isCounting, setIsCounting] = useState(false);
   const [motionSteps, setMotionSteps] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const progress = Math.min((todaySteps / dailyGoal) * 100, 100);
 
+  const [todayData, setTodayData] = useState<any>(null);
+  const todaySteps = todayData?.steps ?? 0;
+  const dailyGoal = todayData?.goal ?? 0;
+  const progress =
+    dailyGoal > 0 ? (todaySteps / dailyGoal) * 100 : 0;
+  
+  const distance = todayData?.distance ?? 0;
+  const calories = todayData?.calories ?? 0;
+  const activeTime = todayData?.activeTime ?? 0;
+  const remaining = todayData?.remaining ?? 0;
+const [isCounting, setIsCounting] = useState(false);
   // Simulate step counting using device motion (simulated)
-  useEffect(() => {
-    if (isCounting) {
-      // Simulate steps being counted (in real app, would use device sensors)
-      intervalRef.current = setInterval(() => {
-        setMotionSteps(prev => {
-          const newSteps = prev + 1;
-          const newTotal = todaySteps + newSteps;
-          setTodaySteps(newTotal);
-          localStorage.setItem('todaySteps', newTotal.toString());
-          return 0; // Reset motion counter
-        });
-      }, 1500); // Add 1 step every 1.5 seconds when counting
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+  // useEffect(() => {
+  //   if (isCounting) {
+  //     // Simulate steps being counted (in real app, would use device sensors)
+  //     intervalRef.current = setInterval(() => {
+  //       setMotionSteps(prev => {
+  //         const newSteps = prev + 1;
+  //         const newTotal = todaySteps + newSteps;
+  //         setTodaySteps(newTotal);
+  //         localStorage.setItem('todaySteps', newTotal.toString());
+  //         return 0; // Reset motion counter
+  //       });
+  //     }, 1500); // Add 1 step every 1.5 seconds when counting
+  //   } else {
+  //     if (intervalRef.current) {
+  //       clearInterval(intervalRef.current);
+  //     }
+  //   }
+
+
+  //   return () => {
+  //     if (intervalRef.current) {
+  //       clearInterval(intervalRef.current);
+  //     }
+  //   };
+  // }, [isCounting, todaySteps]);
+
+  // const handleStartStop = () => {
+  //   setIsCounting(!isCounting);
+  // };
+
+  // const handleReset = () => {
+  //   if (confirm(language === 'en' ? 'Are you sure you want to reset today\'s steps?' : 'هل أنت متأكد من إعادة تعيين خطوات اليوم؟')) {
+  //     setTodaySteps(0);
+  //     setMotionSteps(0);
+  //     localStorage.setItem('todaySteps', '0');
+  //     setIsCounting(false);
+  //   }
+  // };
+
+const stats = [
+  {
+    label: language === "en" ? "Distance" : "المسافة",
+    value: `${distance} ${t("km", language)}`,
+    icon: TrendingUp,
+  },
+  {
+    label: language === "en" ? "Calories" : "السعرات",
+    value: `${calories} ${t("kcal", language)}`,
+    icon: Target,
+  },
+  {
+    label: language === "en" ? "Active Time" : "الوقت النشط",
+    value: `${activeTime} ${t("min", language)}`,
+    icon: Calendar,
+  },
+];
+const loadData = async () => {
+  try {
+    const today = await getTodaySteps();
+    const week = await getWeeklySteps();
+
+    setTodayData(today);
+    setWeeklyData(week);
+
+    console.log(today);
+    console.log(week);
+  } catch (err) {
+    console.log(err);
+  }
+};
+const handleStartStop = async () => {
+  if (!isCounting) {
+    // await addStep(2);
+    await loadData();
+  }
+  // setIsCounting(!isCounting);
+  setIsCounting((prev) => !prev);
+};
+const handleReset = async () => {
+  if (
+    confirm(
+      language === "en"
+        ? "Reset today's steps?"
+        : "إعادة تعيين خطوات اليوم؟"
+    )
+  ) {
+    await resetSteps();
+    await loadData();
+    setIsCounting(false);
+  }
+};
+useEffect(() => {
+  if (!isCounting) return;
+
+  const interval = setInterval(async () => {
+    try {
+      await addStep(1);
+      await loadData();
+    } catch (err) {
+      console.log(err);
     }
+  }, 2000); // كل ثانيتين
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isCounting, todaySteps]);
-
-  const handleStartStop = () => {
-    setIsCounting(!isCounting);
-  };
-
-  const handleReset = () => {
-    if (confirm(language === 'en' ? 'Are you sure you want to reset today\'s steps?' : 'هل أنت متأكد من إعادة تعيين خطوات اليوم؟')) {
-      setTodaySteps(0);
-      setMotionSteps(0);
-      localStorage.setItem('todaySteps', '0');
-      setIsCounting(false);
-    }
-  };
-
-  // Calculate stats
-  const distance = (todaySteps * 0.000762).toFixed(2); // Average step = 0.762 meters
-  const calories = Math.round(todaySteps * 0.04); // Rough estimate: 25 steps = 1 calorie
-  const activeTime = Math.round(todaySteps / 100); // Rough estimate: 100 steps per minute
-
-  const weeklyData = [
-    { day: language === 'en' ? 'Mon' : 'الإثنين', steps: 8234, goal: dailyGoal },
-    { day: language === 'en' ? 'Tue' : 'الثلاثاء', steps: 9567, goal: dailyGoal },
-    { day: language === 'en' ? 'Wed' : 'الأربعاء', steps: 7234, goal: dailyGoal },
-    { day: language === 'en' ? 'Thu' : 'الخميس', steps: 10234, goal: dailyGoal },
-    { day: language === 'en' ? 'Fri' : 'الجمعة', steps: 8934, goal: dailyGoal },
-    { day: language === 'en' ? 'Sat' : 'السبت', steps: 11234, goal: dailyGoal },
-    { day: language === 'en' ? 'Today' : 'اليوم', steps: todaySteps, goal: dailyGoal },
-  ];
-
-  const stats = [
-    { label: language === 'en' ? 'Distance' : 'المسافة', value: `${distance} ${t('km', language)}`, icon: TrendingUp },
-    { label: language === 'en' ? 'Calories' : 'السعرات', value: `${calories} ${t('kcal', language)}`, icon: Target },
-    { label: language === 'en' ? 'Active Time' : 'الوقت النشط', value: `${activeTime} ${t('min', language)}`, icon: Calendar },
-  ];
-
+  return () => clearInterval(interval);
+}, [isCounting]);
+    useEffect(() => {
+  loadData();
+}, []);
   return (
     <div className="min-h-screen p-4 md:p-8 pb-24 md:pb-8 bg-gradient-to-br from-sky-50 via-white to-mint-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       {/* Header */}
@@ -172,8 +223,8 @@ export function StepsCounterPage() {
             />
           </div>
           <p className="text-sm text-sky-600 dark:text-gray-400">
-            {dailyGoal - todaySteps > 0
-              ? `${(dailyGoal - todaySteps).toLocaleString()} ${language === 'en' ? 'steps to go!' : 'خطوة متبقية!'}`
+            {remaining > 0
+              ? `${remaining.toLocaleString()} ${language === 'en' ? 'steps to go!' : 'خطوة متبقية!'}`
               : `🎉 ${language === 'en' ? 'Goal achieved!' : 'تم تحقيق الهدف!'}`}
           </p>
         </div>
@@ -242,19 +293,36 @@ export function StepsCounterPage() {
         </h2>
         <div className="flex items-end justify-between gap-2 h-48">
           {weeklyData.map((day, index) => {
-            const barHeight = (day.steps / day.goal) * 100;
-            const isGoalMet = day.steps >= day.goal;
+      const goal = Number(todayData?.goal) || 10000;
+const barHeight = Math.min((day.steps / goal) * 100, 100);
+            const isGoalMet = day.steps >= goal;
+            console.log(day.steps);
+console.log(day.day, barHeight);
+console.log(barHeight);
+console.log("day =", day);
+console.log("goal =", dailyGoal);
+console.log("todayData =", todayData);
             return (
               <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                <div className="flex-1 w-full flex items-end">
-                  <div
-                    className={`w-full rounded-t-xl transition-all ${
-                      isGoalMet ? 'bg-mint-400' : 'bg-sky-300 dark:bg-sky-600'
-                    }`}
-                    style={{ height: `${barHeight}%` }}
-                    title={`${day.day}: ${day.steps.toLocaleString()} steps`}
-                  />
-                </div>
+
+<div
+  className="flex items-end justify-center"
+  style={{
+    height: "160px",
+    width: "24px",
+  }}
+>
+  <div
+    className={`rounded-t-xl transition-all ${
+      isGoalMet ? "bg-mint-400" : "bg-sky-300 dark:bg-sky-600"
+    }`}
+    style={{
+      height: `${barHeight}%`,
+      width: "24px",
+    }}
+  />
+</div>
+
                 <p className="text-xs text-sky-600 dark:text-gray-400">{day.day}</p>
               </div>
             );

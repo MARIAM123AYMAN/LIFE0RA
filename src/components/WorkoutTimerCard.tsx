@@ -41,6 +41,15 @@ export function WorkoutTimerCard() {
     const secs = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
+  localStorage.setItem(
+"activitySeconds",
+seconds.toString()
+);
+
+localStorage.setItem(
+"activityCalories",
+Math.round(caloriesBurned).toString()
+);
 
   return (
     <div className="bg-card rounded-3xl p-6 shadow-sm mb-8 border border-sky-100/50 dark:border-gray-700/50 transition-colors duration-300">

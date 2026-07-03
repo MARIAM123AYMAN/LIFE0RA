@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Droplets } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
+import logo from "../assets/pro_grad.png";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -98,11 +99,10 @@ export function RegisterPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-sky-400 to-mint-400 flex items-center justify-center shadow-lg">
-              <Droplets className="w-8 h-8 text-white" />
+             <div className=" w-50 h-50">
+                          <img src={logo} alt="LifeOra" className='w-full h-full' />
+                        </div>
             </div>
-            <h1 className="text-3xl text-sky-900 dark:text-white">Balance Life</h1>
-          </div>
           <p className="text-sky-600 dark:text-gray-400">
             {language === 'en' ? 'Create your account and start your wellness journey' : 'أنشئ حسابك وابدأ رحلتك الصحية'}
           </p>

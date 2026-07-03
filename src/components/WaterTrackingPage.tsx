@@ -12,6 +12,7 @@ import { WaterApiKeyModal } from './WaterApiKeyModal';
 import { notifications } from '../utils/notifications';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 interface WaterLog {
   id: number;
@@ -26,7 +27,65 @@ interface DailyWaterData {
 }
 
 export function WaterTrackingPage() {
+  const [timelineData, setTimelineData] = useState<any[]>([]);
+  const [weeklyData, setWeeklyData] = useState(null);
+  const [todayData, setTodayData] = useState<any>(null);
+  const [streakData, setStreakData] = useState<any>(null);
   const { language } = useApp();
+  const navigate = useNavigate();
+
+const fetchTimeline = async () => {
+  try {
+    const response = await fetch(
+      "http://balancelifeapp.runasp.net/api/water/timeline",
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    setTimelineData(data);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const fetchWaterStreak = async () => {
+  try {
+    const response = await fetch(
+      "http://balancelifeapp.runasp.net/api/water/streak",
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log(data);
+console.log(data.logs);
+
+    setStreakData(data);
+  } catch (error) {
+    console.error(error);
+  }
+};
+const fetchWeeklyWater = async () => {
+  const response = await fetch(
+    "http://balancelifeapp.runasp.net/api/water/weekly",
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+  setWeeklyData(data);
+};
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -50,85 +109,103 @@ export function WaterTrackingPage() {
   const currentDayTotal = currentDayLogs.reduce((sum, log) => sum + log.amount, 0);
 
   // Save to localStorage whenever waterData changes
-  useEffect(() => {
-    localStorage.setItem('waterTrackingData', JSON.stringify(waterData));
-  }, [waterData]);
 
+const fetchTodayWater = async () => {
+  try {
+    const response = await fetch(
+      "http://balancelifeapp.runasp.net/api/water/today",
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log("TODAY API", data);
+    console.log("TODAY API", data);
+
+    setTodayData(data);
+    const today =
+  new Date().toISOString().split("T")[0];
+
+localStorage.setItem(
+  `water-${today}`,
+  JSON.stringify(data)
+);
+  } catch (error) {
+    console.error(error);
+  }
+};
+useEffect(() => {
+  fetchTodayWater();
+  fetchWaterStreak();
+  fetchWeeklyWater();
+  fetchTimeline();
+}, []);
+
+console.log("todayData =>", todayData);
+console.log("weeklyData =>", weeklyData);
+console.log("streakData =>", streakData);
+console.log("timelineData =>", timelineData);
   // Calculate streak
-  const calculateStreak = () => {
-    const dates = Object.keys(waterData).sort().reverse();
-    let streak = 0;
-    const today = new Date();
-    
-    for (let i = 0; i < dates.length; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
-      const dateStr = checkDate.toISOString().split('T')[0];
-      
-      const dayTotal = (waterData[dateStr] || []).reduce((sum, log) => sum + log.amount, 0);
-      
-      if (dayTotal >= targetWater) {
-        streak++;
-      } else {
-        if (i === 0) continue; // Skip today if not reached yet
-        break;
+
+const handleAddWater = async (amount: number) => {
+   console.log("ADD WATER:", amount);
+  try {
+    const response = await fetch(
+      "http://balancelifeapp.runasp.net/api/water",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          amountInMl: amount,
+        }),
       }
+    );
+console.log("STATUS", response.status);
+const message = await response.text();
+console.log(message);
+    if (!response.ok) {
+      throw new Error("Failed to add water");
     }
-    
-    return streak;
-  };
 
-  const handleAddWater = (amount: number) => {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString(language === 'en' ? 'en-US' : 'ar-EG', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
 
-    const newLog: WaterLog = {
-      id: Date.now(),
-      amount,
-      time: timeString,
-      timestamp: now.getTime(),
-      date: selectedDate,
-    };
+await fetchTodayWater();
+await fetchWeeklyWater();
+await fetchWaterStreak();
+await fetchTimeline();
 
-    setWaterData(prev => {
-      const updated = {
-        ...prev,
-        [selectedDate]: [newLog, ...(prev[selectedDate] || [])],
-      };
-      
-      // Calculate new total
-      const newTotal = (updated[selectedDate] || []).reduce((sum, log) => sum + log.amount, 0);
-      
-      // Show notifications based on progress
-      const cups = Math.floor(amount / 250);
-      notifications.waterAdded(cups);
-      
-      if (newTotal >= targetWater && (currentDayTotal < targetWater)) {
-        notifications.waterGoalReached();
-      } else if (newTotal >= targetWater / 2 && currentDayTotal < targetWater / 2) {
-        notifications.waterGoalHalfway();
-      }
-      
-      // Update global storage for dashboard
-      localStorage.setItem('waterCups', Math.floor(newTotal / 250).toString());
-      
-      return updated;
-    });
-  };
+    notifications.waterAdded(
+      Math.floor(amount / 250)
+    );
+  } catch (error) {
+    console.error(error);
+  }
+};
 
-  const handleDateChange = (date: string) => {
-    setSelectedDate(date);
-  };
+  
+
+const handleDateChange = async (date: string) => {
+  setSelectedDate(date);
+
+  const saved = localStorage.getItem(
+    `water-${date}`
+  );
+
+  if (saved) {
+    setTodayData(JSON.parse(saved));
+  }
+};
 
   const handleSaveApiKey = (key: string) => {
     setApiKey(key);
     localStorage.setItem('geminiApiKey', key);
     setIsApiKeyModalOpen(false);
-    notifications.success(language === 'en' ? 'API Key saved successfully!' : 'تم حفظ مفتاح API بنجاح!');
+    notifications.settingsSaved();
   };
 
   return (
@@ -138,9 +215,9 @@ export function WaterTrackingPage() {
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-sky-900 dark:text-sky-100">{t('waterTracking', language)}</h1>
           <button
-            onClick={() => setIsApiKeyModalOpen(true)}
+            onClick={() => navigate("/settings")}
             className="p-2 rounded-xl bg-card shadow-md text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-gray-800 transition-colors border border-sky-100 dark:border-gray-700"
-            title="API Settings"
+            title=" Settings"
           >
             <Settings className="w-5 h-5" />
           </button>
@@ -149,29 +226,47 @@ export function WaterTrackingPage() {
       </div>
 
       {/* Date Navigator */}
-      <WaterDayNavigator
-        selectedDate={selectedDate}
-        onDateChange={handleDateChange}
-        waterData={waterData}
-        targetWater={targetWater}
-      />
+<WaterDayNavigator
+  selectedDate={selectedDate}
+  onDateChange={handleDateChange}
+  waterData={{
+    [selectedDate]: [
+      {
+                id: 1,
+        amount: todayData?.totalMl || 0,
+        time: "",
+        timestamp: Date.now(),
+        date: selectedDate,
+      },
+    ],
+  }}
+  targetWater={todayData?.goalMl || 2000}
+/>
 
       {/* Main Content: 2-column on Desktop, Stacked on Mobile */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column */}
         <div className="space-y-6">
           {/* Main Stats Card */}
-          <WaterProgressRing
-            current={currentDayTotal}
-            target={targetWater}
-            selectedDate={selectedDate}
-          />
+<WaterProgressRing
+  current={todayData?.totalMl || 0}
+  target={todayData?.goalMl || 2000}
+  selectedDate={selectedDate}
+  cups={todayData?.cups || 0}
+/>
 
           {/* Quick Add Water Section */}
-          <WaterActionButtons onAddWater={handleAddWater} />
+          <WaterActionButtons
+  onAddWater={handleAddWater}
+  cups={todayData?.cups || 0}
+/>
 
           {/* Water Streak Banner */}
-          <WaterStreakCard streak={calculateStreak()} />
+<WaterStreakCard
+  streak={streakData?.currentStreak || 0}
+  cups={todayData?.cups || 0}
+  percentage={todayData?.percentage || 0}
+/>
 
           {/* AI Insights */}
           {apiKey && (
@@ -188,11 +283,13 @@ export function WaterTrackingPage() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Daily Water Timeline */}
-          <WaterTimeline logs={currentDayLogs} selectedDate={selectedDate} />
+          <WaterTimeline logs={timelineData} selectedDate={selectedDate} />
 
           {/* Weekly Hydration Chart */}
-          <WaterChartContainer waterData={waterData} targetWater={targetWater} />
-
+       <WaterChartContainer
+  waterData={weeklyData}
+  targetWater={targetWater}
+/>
           {/* Nearby Water Sources */}
           <NearbyWaterSources />
         </div>

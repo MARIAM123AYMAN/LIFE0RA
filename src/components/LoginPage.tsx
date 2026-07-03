@@ -1,9 +1,12 @@
 import React from 'react';
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Droplets } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
+import logo from "../assets/pro_grad.png";
+
+
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -29,38 +32,51 @@ export function LoginPage() {
     }
 
     // Check if user is registered
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    const user = registeredUsers.find(
-      (u: any) => u.email === formData.email && u.password === formData.password
+console.log("Email:", formData.email);
+console.log("Password:", formData.password);
+  try {
+    const response = await fetch(
+      "http://balancelifeapp.runasp.net/api/Authentication/Login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      }
     );
 
-    setTimeout(() => {
-      if (user) {
-        // Valid user - allow login
-        localStorage.setItem('userName', user.name);
-        localStorage.setItem('userEmail', user.email);
-        localStorage.setItem('isLoggedIn', 'true');
-        
-        // Check if onboarding is completed
-        const onboardingComplete = localStorage.getItem('onboardingComplete');
-        if (onboardingComplete === 'true') {
-          navigate('/dashboard');
-        } else {
-          navigate('/onboarding');
-        }
-      } else {
-        // Check if email exists but password is wrong
-        const emailExists = registeredUsers.find((u: any) => u.email === formData.email);
-        
-        if (emailExists) {
-          setError(language === 'en' ? 'Incorrect password. Please try again.' : 'كلمة مرور غير صحيحة. حاول مرة أخرى.');
-        } else {
-          setError(language === 'en' ? 'No account found with this email. Please sign up first.' : 'لا يوجد حساب بهذا البريد الإلكتروني. يرجى التسجيل أولاً.');
-        }
-      }
-      setIsLoading(false);
-    }, 1000);
-  };
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error("Login Failed");
+    }
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("userEmail", data.email);
+    localStorage.setItem("userName", data.displayName);
+    localStorage.setItem("isLoggedIn", "true");
+
+console.log("Status:", response.status);
+    const onboardingComplete =
+      localStorage.getItem("onboardingComplete");
+
+    if (onboardingComplete === "true") {
+      navigate("/dashboard");
+    } else {
+      navigate("/onboarding");
+    }
+  } catch (error) {
+    setError("Invalid Email Or Password");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
 
   const handleSocialLogin = (provider: string) => {
     // Simulate social login - auto-register and login
@@ -82,17 +98,18 @@ export function LoginPage() {
     // Social login users also need onboarding
     navigate('/onboarding');
   };
+console.log(localStorage.getItem("token"));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-mint-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4 transition-colors duration-300">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-sky-400 to-mint-400 flex items-center justify-center shadow-lg">
-              <Droplets className="w-8 h-8 text-white" />
+          <div>
+            <div className=" w-50 h-50">
+              <img src={logo} alt="LifeOra" className='w-full h-full' />
             </div>
-            <h1 className="text-3xl text-sky-900 dark:text-white">Balance Life</h1>
+           
           </div>
           <p className="text-sky-600 dark:text-gray-400">
             {language === 'en' ? 'Welcome back! Log in to continue your wellness journey' : 'مرحباً بعودتك! سجل الدخول لمتابعة رحلتك الصحية'}

@@ -6,28 +6,31 @@ import { ServicesGrid } from './ServicesGrid';
 import { ChatbotUI } from './ChatbotUI';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
+import { useEffect } from "react";
+import { getOnboardingResult } from "../services/onboardingService";
 
 export function SportsOverview() {
   const { language } = useApp();
-  const [currentGoal, setCurrentGoal] = useState(() => {
-    // Get goal from onboarding data
-    const userGoal = localStorage.getItem('userFitnessGoal');
-    if (userGoal) {
-      if (language === 'en') {
-        if (userGoal === 'weightLoss') return 'Weight Loss';
-        if (userGoal === 'muscleGain') return 'Muscle Building';
-        if (userGoal === 'stayFit') return 'Stay Healthy';
-        if (userGoal === 'improveEndurance') return 'Improve Endurance';
-      } else {
-        if (userGoal === 'weightLoss') return 'فقدان الوزن';
-        if (userGoal === 'muscleGain') return 'بناء العضلات';
-        if (userGoal === 'stayFit') return 'الحفاظ على الصحة';
-        if (userGoal === 'improveEndurance') return 'تحسين القدرة على التحمل';
-      }
-    }
-    return localStorage.getItem('fitnessGoal') || (language === 'en' ? 'Stay Healthy' : 'الحفاظ على الصحة');
-  });
+  const [currentGoal, setCurrentGoal] = useState("");
+const loadGoal = async () => {
+  try {
+    const data = await getOnboardingResult();
 
+    console.log(data);
+const savedGoal = localStorage.getItem("fitnessGoal");
+
+if (savedGoal) {
+    setCurrentGoal(savedGoal);
+}
+    setCurrentGoal(data.goal || "Stay Fit");
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+useEffect(() => {
+  loadGoal();
+}, []);
   return (
     <div className="min-h-screen p-4 md:p-8 pb-24 md:pb-8 bg-background transition-colors duration-300">
       {/* Header */}
@@ -38,7 +41,7 @@ export function SportsOverview() {
             <p className="text-sky-600 dark:text-sky-400">{t('yourFitness', language)}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button 
+            {/* <button 
               className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-sky-200 dark:border-gray-700 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-gray-800 transition-colors shadow-sm"
               title={t('today', language)}
             >
@@ -48,10 +51,10 @@ export function SportsOverview() {
             <button 
               className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-card border border-sky-200 dark:border-gray-700 text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-gray-800 transition-colors shadow-sm"
               title={t('settings', language)}
-            >
-              <Settings className="w-5 h-5" />
+            > */}
+              {/* <Settings className="w-5 h-5" />
               <span className="hidden md:inline">{t('settings', language)}</span>
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -60,11 +63,10 @@ export function SportsOverview() {
       <AISmartCoachPanel currentGoal={currentGoal} />
 
       {/* Workout Timer Card */}
-      <WorkoutTimerCard />
+      {/* <WorkoutTimerCard /> */}
 
       {/* Services Grid - All Features */}
-      <ServicesGrid />
-
+      <ServicesGrid goal={currentGoal} />
       {/* Chatbot */}
       <ChatbotUI />
     </div>

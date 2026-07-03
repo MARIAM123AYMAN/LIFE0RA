@@ -22,6 +22,8 @@ import { SettingsPage } from './components/SettingsPage';
 import { GlobalNotificationSystem } from './components/GlobalNotificationSystem';
 import { RandomHealthTips } from './components/RandomHealthTips';
 import { AppProvider } from './contexts/AppContext';
+import { ChatbotUI } from './components/ChatbotUI';
+// import { CoachChatPage } from './components/CoachChatPage';
 
 export default function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -38,7 +40,8 @@ export default function App() {
 
   // Protected Route Component
   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />;
+    const token = localStorage.getItem("token");
+    return token  ? <>{children}</> : <Navigate to="/login" replace />;
   };
 
   return (
@@ -86,6 +89,8 @@ export default function App() {
                       <Route path="/sports/steps" element={<StepsCounterPage />} />
                       <Route path="/sports/timer" element={<ActivityTimerPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="//sports/activity" element={<ActivityTimerPage />} />
+                      {/* <Route path="/chatBot" element={<CoachChatPage />} /> */}
                     </Routes>
                   </div>
 

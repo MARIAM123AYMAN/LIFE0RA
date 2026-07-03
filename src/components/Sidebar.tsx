@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Utensils, Droplets, Dumbbell, LogOut } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
-
+import pro_grad from '../assets/pro_grad.png'
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -27,8 +27,9 @@ export function Sidebar() {
       {/* Logo */}
       <div className="mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 to-mint-400 flex items-center justify-center shadow-lg">
-            <span className="text-2xl">🌿</span>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center ">
+            {/* <span className="text-2xl">🌿</span> */}
+            <img src={pro_grad} alt="" />
           </div>
           <div>
             <h1 className="text-sky-900 dark:text-sky-100">Balance Life</h1>
@@ -68,7 +69,7 @@ export function Sidebar() {
           </div>
           <div className="flex-1">
             <p className="text-sm text-sky-900 dark:text-white font-medium">{userName}</p>
-            <p className="text-xs text-sky-600 dark:text-gray-400">Premium Member</p>
+            <p className="text-xs text-sky-600 dark:text-gray-400">Premium</p>
           </div>
         </div>
         

@@ -10,7 +10,11 @@ import {
   Coffee 
 } from 'lucide-react';
 
-export function ServicesGrid() {
+interface ServicesGridProps {
+  goal: string;
+}
+
+export function ServicesGrid({ goal }: ServicesGridProps) {
   const services = [
     {
       id: 'workouts',
@@ -22,16 +26,16 @@ export function ServicesGrid() {
       iconColor: 'text-sky-600',
       tooltip: 'Access cardio, strength, and home workout plans',
     },
-    {
-      id: 'ai-coach',
-      icon: MessageCircle,
-      title: 'AI Coach',
-      description: 'Chat with smart coach',
-      path: '#',
-      color: 'bg-purple-100',
-      iconColor: 'text-purple-600',
-      tooltip: 'Click the floating chat button to talk with AI coach',
-    },
+    // {
+    //   id: 'ai-coach',
+    //   icon: MessageCircle,
+    //   title: 'AI Coach',
+    //   description: 'Chat with smart coach',
+    //   path: '/sports/chatBot',
+    //   color: 'bg-purple-100',
+    //   iconColor: 'text-purple-600',
+    //   tooltip: 'Click the floating chat button to talk with AI coach',
+    // },
     {
       id: 'timer',
       icon: Timer,
@@ -93,6 +97,7 @@ export function ServicesGrid() {
       tooltip: 'Learn how caffeine affects your training and sleep',
     },
   ];
+
 
   return (
     <div className="mb-8">

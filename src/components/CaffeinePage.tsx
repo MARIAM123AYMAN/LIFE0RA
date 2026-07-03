@@ -1,65 +1,58 @@
 import { ArrowLeft, Coffee, Clock, Moon, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import { useEffect, useState } from "react";
+import { getCaffeineTips } from "../services/caffeineService";
+import { getCaffeineGuide } from "../services/caffeineGuideService";
+import { getPreWorkout } from "../services/preWorkoutService";
+import { getCaffeineReference } from "../services/caffeineReferenceService";
 export function CaffeinePage() {
   const navigate = useNavigate();
+const [tips, setTips] = useState<any[]>([]);
+const [guide, setGuide] = useState<any[]>([]);
+const [preWorkout, setPreWorkout] = useState<any[]>([]);
+const [reference, setReference] = useState<any[]>([]);
+const tipColors = [
+  "bg-pink-100",
+  "bg-sky-100",
+  "bg-green-100",
+  "bg-amber-100",
+];
+const sectionColors = {
+  tips: "bg-gradient-to-br from-pink-50 to-rose-100",
+  guide: "bg-gradient-to-br from-sky-50 to-cyan-100",
+  preWorkout: "bg-gradient-to-br from-amber-50 to-yellow-100",
+  reference: "bg-gradient-to-br from-emerald-50 to-green-100",
+};
 
-  const caffeineTips = [
-    {
-      icon: Coffee,
-      iconBg: 'bg-amber-100',
-      iconColor: 'text-amber-600',
-      title: 'Avoid caffeine after 6 PM',
-      description: 'Late caffeine disrupts sleep quality and recovery',
-      detail: 'Your body needs quality sleep to recover from workouts. Caffeine consumed after 6 PM can significantly impact your sleep cycle.',
-    },
-    {
-      icon: Clock,
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-600',
-      title: 'Caffeine stays 6-8 hours in body',
-      description: 'Half-life affects you longer than you think',
-      detail: 'Caffeine has a half-life of 5-6 hours, meaning half of it is still in your system hours after consumption.',
-    },
-    {
-      icon: Moon,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
-      title: 'Try herbal tea instead',
-      description: 'Chamomile or peppermint for evening relaxation',
-      detail: 'Herbal teas provide warmth and comfort without the stimulating effects of caffeine, perfect for evening wind-down.',
-    },
-    {
-      icon: Zap,
-      iconBg: 'bg-sky-100',
-      iconColor: 'text-sky-600',
-      title: 'Hydrate more, caffeinate less',
-      description: 'Water boosts energy naturally',
-      detail: 'Often, fatigue is caused by dehydration. Try drinking water first before reaching for coffee.',
-    },
-  ];
 
-  const dosageGuide = [
-    {
-      amount: '0-200mg',
-      effect: 'Mild boost',
-      examples: '1-2 cups coffee',
-      color: 'bg-teal-50',
-    },
-    {
-      amount: '200-400mg',
-      effect: 'Moderate energy',
-      examples: '2-4 cups coffee',
-      color: 'bg-amber-50',
-    },
-    {
-      amount: '400mg+',
-      effect: 'Too much',
-      examples: 'May cause jitters',
-      color: 'bg-red-50',
-    },
-  ];
 
+useEffect(() => {
+  loadData();
+}, []);
+console.log(import.meta.env.VITE_API_URL);
+
+const loadData = async () => {
+  try {
+    const tipsData = await getCaffeineTips();
+    const guideData = await getCaffeineGuide();
+    const preData = await getPreWorkout();
+    const referenceData = await getCaffeineReference();
+console.log(import.meta.env.VITE_API_URL);
+
+console.log(guideData);
+    console.log("Tips", tipsData);
+    console.log("Guide", guideData);
+    console.log("Pre Workout", preData);
+    console.log("Reference", referenceData);
+
+    setTips(tipsData);
+    setGuide(guideData);
+    setPreWorkout(preData);
+    setReference(referenceData);
+  } catch (error) {
+    console.log(error);
+  }
+};
   return (
     <div className="min-h-screen p-4 md:p-8 pb-24 md:pb-8">
       {/* Header */}
@@ -80,21 +73,22 @@ export function CaffeinePage() {
       <div className="mb-8">
         <h2 className="text-sky-900 mb-6">Essential Tips</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {caffeineTips.map((tip, index) => {
+        {tips.map((tip, index) => {
+
             const Icon = tip.icon;
             return (
               <div
                 key={index}
-                className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all"
-              >
+                className={`${tipColors[index % tipColors.length]} rounded-3xl p-6 shadow-sm`}
+>
+              
                 <div className="flex items-start gap-4 mb-4">
-                  <div className={`w-14 h-14 rounded-2xl ${tip.iconBg} flex items-center justify-center flex-shrink-0`}>
-                    <Icon className={`w-7 h-7 ${tip.iconColor}`} />
-                  </div>
+                <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center">
+  <Coffee className="w-7 h-7 text-amber-600" />
+</div>
                   <div className="flex-1">
                     <h3 className="text-sky-900 mb-2">{tip.title}</h3>
                     <p className="text-sm text-sky-600 mb-3">{tip.description}</p>
-                    <p className="text-sm text-sky-700">{tip.detail}</p>
                   </div>
                 </div>
               </div>
@@ -111,15 +105,15 @@ export function CaffeinePage() {
             Recommended daily limit for adults: <strong className="text-sky-900">400mg</strong>
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {dosageGuide.map((item, index) => (
+           {guide.map((item, index) => (
               <div
                 key={index}
-                className={`${item.color} rounded-2xl p-4`}
-                title={`${item.amount} of caffeine`}
+                className={`${sectionColors.guide} rounded-2xl p-4`}
+                title={`${item.range} of caffeine`}
               >
                 <p className="text-sky-900 mb-1">{item.amount}</p>
-                <p className="text-sm text-sky-600 mb-2">{item.effect}</p>
-                <p className="text-xs text-sky-500">{item.examples}</p>
+                <p className="text-sm text-sky-600 mb-2">{item.level}</p>
+                <p className="text-xs text-sky-500">{item.description}</p>
               </div>
             ))}
           </div>
@@ -130,53 +124,47 @@ export function CaffeinePage() {
       <div className="bg-white rounded-3xl p-6 shadow-sm mb-8">
         <h2 className="text-sky-900 mb-4">Pre-Workout Caffeine</h2>
         <div className="space-y-4">
-          <div className="p-4 bg-sky-50 rounded-2xl">
-            <p className="text-sky-900 mb-2">✅ <strong>Good:</strong> Morning/Early Afternoon</p>
-            <p className="text-sm text-sky-600">
-              Consume 30-60 minutes before workout for peak performance. Best for morning or early afternoon sessions.
-            </p>
-          </div>
-          <div className="p-4 bg-orange-50 rounded-2xl">
-            <p className="text-sky-900 mb-2">⚠️ <strong>Caution:</strong> Evening Workouts</p>
-            <p className="text-sm text-sky-600">
-              If you exercise in the evening, avoid pre-workout caffeine to ensure better sleep quality.
-            </p>
+         <div className={`${sectionColors.preWorkout} p-4 rounded-2xl`}>
+            {preWorkout.map((item, index) => (
+  <div
+    key={index}
+    className={`${sectionColors.preWorkout} p-4 rounded-2xl ${
+      item.type === "Good" ? "bg-sky-50" : "bg-orange-50"
+    }`}
+  >
+    <p className="text-sky-900 mb-2">
+      {item.type === "Good" ? "✅" : "⚠️"}{" "}
+      <strong>{item.title}</strong>: {item.time}
+    </p>
+
+    <p className="text-sm text-sky-600">
+      {item.description}
+    </p>
+  </div>
+))}
           </div>
         </div>
       </div>
 
       {/* Quick Reference */}
-      <div className="bg-gradient-to-r from-sky-100 to-sky-50 rounded-3xl p-6">
-        <h3 className="text-sky-900 mb-4">Quick Reference</h3>
+      <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-3xl p-6 w-100  m-auto">
+        <h3 className="text-sky-900 mb-4 ">Quick Reference</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="flex items-start gap-2">
-            <span className="text-2xl">☕</span>
-            <div>
-              <p className="text-sm text-sky-900">Regular Coffee</p>
-              <p className="text-xs text-sky-600">~95mg per cup</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-2xl">🍵</span>
-            <div>
-              <p className="text-sm text-sky-900">Green Tea</p>
-              <p className="text-xs text-sky-600">~25mg per cup</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-2xl">🥤</span>
-            <div>
-              <p className="text-sm text-sky-900">Energy Drink</p>
-              <p className="text-xs text-sky-600">~80-150mg per can</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-2xl">🍫</span>
-            <div>
-              <p className="text-sm text-sky-900">Dark Chocolate</p>
-              <p className="text-xs text-sky-600">~12mg per oz</p>
-            </div>
-          </div>
+          {reference.map((item, index) => (
+  <div key={index} className="flex items-start gap-2">
+    <span className="text-2xl">{item.icon}</span>
+
+    <div>
+      <p className="text-sm text-sky-900">
+        {item.name}
+      </p>
+
+      <p className="text-xs text-sky-600">
+        {item.amount}
+      </p>
+    </div>
+  </div>
+))}
         </div>
       </div>
     </div>

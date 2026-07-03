@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Coffee, Sun, Moon } from 'lucide-react';
-
+import { useApp } from '../contexts/AppContext';
+import { t } from '../utils/translations';
 interface MealCategoryCardProps {
   meal: {
     type: string;
@@ -9,10 +10,12 @@ interface MealCategoryCardProps {
     targetCalories: number;
     macros: { protein: number; carbs: number; fats: number };
     color: string;
+    mealCount: number;
   };
 }
 
 export function MealCategoryCard({ meal }: MealCategoryCardProps) {
+  const { language } = useApp();
   const percentage = (meal.currentCalories / meal.targetCalories) * 100;
 
   const getIcon = (type: string) => {
@@ -28,8 +31,9 @@ export function MealCategoryCard({ meal }: MealCategoryCardProps) {
     }
   };
 
-  const Icon = getIcon(meal.type);
 
+  const Icon = getIcon(meal.type);
+console.log("CARD DATA", meal);
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group">
       {/* Header with Icon */}
@@ -41,7 +45,10 @@ export function MealCategoryCard({ meal }: MealCategoryCardProps) {
           <div>
             <h3 className="text-sky-900">{meal.name}</h3>
             <p className="text-sm text-sky-600">
-              {meal.currentCalories} / {meal.targetCalories} kcal
+                  {meal.mealCount} {t("meals", language)}
+            </p>
+            <p className="text-sm text-sky-600">
+                  {meal.currentCalories} / {meal.targetCalories} kcal
             </p>
           </div>
         </div>
@@ -60,16 +67,16 @@ export function MealCategoryCard({ meal }: MealCategoryCardProps) {
       {/* Macros Summary */}
       <div className="grid grid-cols-3 gap-4 mb-6 pb-6 border-b border-sky-100">
         <div>
-          <p className="text-xs text-sky-600 mb-1">Protein</p>
-          <p className="text-sky-900">{meal.macros.protein}g</p>
+          <p className="text-xs text-sky-600 mb-1">{t("protein", language)}</p>
+          <p className="text-sky-900">{meal.macros.protein.toFixed(1)}g</p>
         </div>
         <div>
-          <p className="text-xs text-sky-600 mb-1">Carbs</p>
-          <p className="text-sky-900">{meal.macros.carbs}g</p>
+          <p className="text-xs text-sky-600 mb-1">{t("carbs", language)}</p>
+          <p className="text-sky-900">{meal.macros.carbs.toFixed(1)}g</p>
         </div>
         <div>
-          <p className="text-xs text-sky-600 mb-1">Fats</p>
-          <p className="text-sky-900">{meal.macros.fats}g</p>
+          <p className="text-xs text-sky-600 mb-1">{t("fats" , language)}</p>
+          <p className="text-sky-900">{meal.macros.fats.toFixed(1)}g</p>
         </div>
       </div>
 
@@ -78,7 +85,7 @@ export function MealCategoryCard({ meal }: MealCategoryCardProps) {
         to={`/meal/${meal.type}`}
         className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-2xl bg-gradient-to-r from-sky-50 to-mint-50 text-sky-700 hover:from-sky-100 hover:to-mint-100 transition-all group-hover:shadow-sm"
       >
-        <span>View Details</span>
+       <span>{t("viewDetails", language)}</span>
         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
       </Link>
     </div>

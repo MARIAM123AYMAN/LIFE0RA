@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, CheckCircle, User, Heart, Target, Activity, Coffee } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { translations } from '../utils/translations';
-
+import {
+  createUserProfile,
+  getOnboardingResult,
+} from "../services/onboardingService";
 interface OnboardingData {
   // Step 1: Basic Info
   age: string;
@@ -136,18 +139,82 @@ export function OnboardingForm() {
   };
 
   // Handle form submission
-  const handleSubmit = () => {
-    const recommendations = calculateRecommendations();
-    
-    // Store onboarding data and recommendations in localStorage
-    localStorage.setItem('onboardingData', JSON.stringify(formData));
-    localStorage.setItem('userRecommendations', JSON.stringify(recommendations));
-    localStorage.setItem('onboardingComplete', 'true');
-    localStorage.setItem('showWelcomeMessage', 'true');
-    
-    // Navigate to dashboard
-    navigate('/dashboard');
-  };
+  const handleSubmit = async () => {
+  try {
+    const payload = {
+      age: Number(formData.age),
+      gender: formData.gender === "male" ? "Male" : "Female",
+      height: Number(formData.height),
+      weight: Number(formData.weight),
+
+      goal:
+        formData.goal === "loseWeight"
+          ? "Lose Weight"
+          : formData.goal === "gainMuscle"
+          ? "Gain Muscle"
+          : formData.goal === "stayActive"
+          ? "Stay Active"
+          : formData.goal === "improveFitness"
+          ? "Improve Fitness"
+          : formData.goal === "reduceStress"
+          ? "Reduce Stress"
+          : "Event Preparation",
+
+      activityLevel:
+        formData.activityLevel === "sedentary"
+          ? "Sedentary"
+          : formData.activityLevel === "light"
+          ? "Light"
+          : formData.activityLevel === "moderate"
+          ? "Moderate"
+          : formData.activityLevel === "active"
+          ? "Active"
+          : "Very Active",
+
+     sleepHours:
+  formData.sleepHours === "less5"
+    ? 4
+    : formData.sleepHours === "5to6"
+    ? 6
+    : formData.sleepHours === "7to8"
+    ? 8
+    : 9,
+      waterIntake:
+        formData.waterIntake === "less1L"
+          ? 1
+          : formData.waterIntake === "1to2L"
+          ? 2
+          : formData.waterIntake === "2to3L"
+          ? 3
+          : 4,
+
+      jobType:
+        formData.jobType === "desk"
+          ? "Office"
+          : formData.jobType === "standing"
+          ? "Standing"
+          : formData.jobType === "physical"
+          ? "Physical"
+          : "Mixed",
+    };
+
+    await createUserProfile(payload);
+
+    const result = await getOnboardingResult();
+
+    localStorage.setItem(
+      "userRecommendations",
+      JSON.stringify(result)
+    );
+
+    localStorage.setItem("onboardingComplete", "true");
+
+    navigate("/dashboard");
+  } catch (error) {
+    console.error(error);
+    alert("Failed to save profile");
+  }
+};
 
   // Check if current step is valid
   const isStepValid = () => {
