@@ -10,10 +10,11 @@ import {
   getWorkoutHistory,
 } from "../services/workoutService";
 import { getGroupedWorkouts } from "../services/workoutService";
+import { useApp } from '../contexts/AppContext';
 
 export function WorkoutsPage() {
   const navigate = useNavigate();
-  const [currentGoal, setCurrentGoal] = useState("");
+  // const [currentGoal, setCurrentGoal] = useState("");
   const [workoutResults, setWorkoutResults] = useState<Record<number, any>>({});
   const [summary, setSummary] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
@@ -22,7 +23,7 @@ export function WorkoutsPage() {
   const [activeWorkoutId, setActiveWorkoutId] = useState<number | null>(null);
   const [workoutCategories, setWorkoutCategories] = useState<any[]>([]);
   const [activeSession, setActiveSession] = useState<number | null>(null);
-
+const { fitnessGoal } = useApp();
   const activityCalories = Number(localStorage.getItem("activityCalories"));
   const activitySeconds = Number(localStorage.getItem("activitySeconds"));
 
@@ -111,12 +112,12 @@ export function WorkoutsPage() {
     }
   };
 
-  const loadGoal = async () => {
-    const data = await getOnboardingResult();
-    setCurrentGoal(data.goal);
-    console.log("Goal =", data.goal);
-    console.log(data);
-  };
+  // const loadGoal = async () => {
+  //   const data = await getOnboardingResult();
+  //   setCurrentGoal(data.goal);
+  //   console.log("Goal =", data.goal);
+  //   console.log(data);
+  // };
 
   const loadWorkouts = async () => {
     const { data } = await getGroupedWorkouts();
@@ -152,7 +153,6 @@ export function WorkoutsPage() {
   };
 
   useEffect(() => {
-    loadGoal();
     loadWorkouts();
     checkActiveWorkout();
     loadTodaySummary();
@@ -216,7 +216,7 @@ export function WorkoutsPage() {
       {activeSession && (
         <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 mb-6">
           <h2 className="font-bold text-sky-800">🏋 Active Workout</h2>
-          <p>Session #{activeSession}</p>
+          {/* <p>Session #{activeSession}</p> */}
           <p className="text-green-600">● Running</p>
         </div>
       )}
@@ -233,7 +233,7 @@ export function WorkoutsPage() {
         </button>
         <h1 className="text-sky-900 mb-2">Workout Plans</h1>
         <p className="text-sky-600">
-          Customized for your goal: <strong>{currentGoal}</strong>
+          Customized for your goal: <strong>{fitnessGoal}</strong>
         </p>
       </div>
 
@@ -264,7 +264,7 @@ export function WorkoutsPage() {
           </div>
           <div>
             <h2 className="text-sky-900">Your Goal</h2>
-            <p className="text-2xl font-bold text-sky-900">{currentGoal}</p>
+            <p className="text-2xl font-bold text-sky-900">{fitnessGoal}</p>
           </div>
         </div>
         <p className="text-sm text-sky-600">
@@ -297,7 +297,7 @@ export function WorkoutsPage() {
                     {/* <div className={`w-16 h-16 rounded-2xl ${currentGoal} flex items-center justify-center group-hover:scale-110 transition-transform`}> */}
                     <div className='text-sky-900  bg-sky-100 p-4 rounded-2xl'>
                       {/* <Dumbbell className={`w-12 h-12 ${category.iconColor}`} /> */}
-                      {currentGoal}
+                      {fitnessGoal}
                     </div>
                   </div>
 

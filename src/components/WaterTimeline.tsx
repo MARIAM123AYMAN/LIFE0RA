@@ -27,7 +27,7 @@ export function WaterTimeline({ logs, selectedDate }: WaterTimelineProps) {
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-md">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between  mb-4">
         <h2 className="text-sky-900">Daily Water Timeline</h2>
         <span className="text-sm text-sky-600">{formatDate(selectedDate)}</span>
       </div>

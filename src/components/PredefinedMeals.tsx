@@ -3,6 +3,19 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useRef, useEffect, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
+// import extraMeals from "../data/recommendedMeals.json";
+const mealImages: Record<string, string> = {
+  "Grilled Chicken Breast":
+    "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800",
+  "Salmon with Vegetables":
+    "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800",
+  "Oatmeal with Fruits":
+    "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=800",
+  "Tuna Salad":
+    "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800",
+  "Egg White Omelette":
+    "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800",
+};
 
 export function PredefinedMeals({
   addMealToToday ,selectedMeals ,removeMealFromToday,
@@ -40,8 +53,23 @@ if (!response.ok) {
 }
 
 const data = await response.json();
+const dummyResponse = await fetch("https://dummyjson.com/recipes");
+const dummyData = await dummyResponse.json();
+
+const extraMeals = dummyData.recipes.slice(0, 15).map((meal: any) => ({
+  id: `dummy-${meal.id}`,
+  name: meal.name,
+  pictureUrl: meal.image,
+  calories: meal.caloriesPerServing,
+  protein: 20,
+  carbs: 30,
+  fats: 10,
+}));
 console.log(data);
-setPredefinedMeals(data.data);
+setPredefinedMeals([
+  ...data.data,
+  ...extraMeals
+]);
 }
 catch (error) {
 console.error("Error fetching meals:", error);
@@ -70,7 +98,7 @@ getRecommendedMeals();
       <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-6">
         {(showAll
   ? predefinedMeals
-  : predefinedMeals.slice(0, 6)
+  : predefinedMeals.slice(0, 8)
 ).map((meal) => (
           <MealCard key={meal.id} meal={meal} addMealToToday={addMealToToday} removeMealFromToday={removeMealFromToday} selectedMeals={selectedMeals}/>
         ))}
@@ -108,14 +136,15 @@ console.log(meal);
   const isAdded = selectedMeals.some(
     (m) => m.name === meal.name
   );
+  const image = mealImages[meal.name] ?? meal.pictureUrl;
   return (
     <div className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all group">
       <div className="relative h-48 overflow-hidden">
         <ImageWithFallback
-          src={meal.pictureUrl}
-          alt={meal.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+       src={image || meal.pictureUrl}
+  alt={meal.name}
+  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+/>
         <div className="absolute top-3 right-3">
 <button
   onClick={() =>

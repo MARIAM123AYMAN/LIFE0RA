@@ -19,7 +19,7 @@ export function StepsCounterPage() {
 
   
   const [motionSteps, setMotionSteps] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [todayData, setTodayData] = useState<any>(null);
   const todaySteps = todayData?.steps ?? 0;

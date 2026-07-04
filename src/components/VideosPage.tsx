@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import { getWorkoutVideos } from "../services/workoutVideoService";
 import { getOnboardingResult } from "../services/onboardingService";
+import { useApp } from '../contexts/AppContext';
 export function VideosPage() {
   const navigate = useNavigate();
-const [currentGoal, setCurrentGoal] = useState("");
-
+// const [currentGoal, setCurrentGoal] = useState("");
+const { fitnessGoal } = useApp();
   const [videos, setVideos] = useState<any[]>([]);
 useEffect(() => {
   loadVideos();
@@ -18,8 +19,8 @@ const getYoutubeThumbnail = (url: string) => {
 };
 const loadVideos = async () => {
   try {
-     const profile = await getOnboardingResult();
-  setCurrentGoal(profile.goal);
+  //    const profile = await getOnboardingResult();
+  // setCurrentGoal(profile.goal);
     const data = await getWorkoutVideos();
 
     console.log("Videos =", data);
@@ -36,7 +37,7 @@ const loadVideos = async () => {
 // );
 
 const filteredVideos = videos.filter((video: any) => {
-  if (currentGoal === "Lose Weight") {
+  if (fitnessGoal === "Lose Weight"){
     return (
       video.title.toLowerCase().includes("fat") ||
       video.title.toLowerCase().includes("cardio") ||
@@ -45,7 +46,7 @@ const filteredVideos = videos.filter((video: any) => {
     );
   }
 
-  if (currentGoal === "Gain Muscle") {
+  if (fitnessGoal === "Gain Muscle") {
     return (
       video.title.toLowerCase().includes("strength") ||
       video.title.toLowerCase().includes("upper") ||
@@ -54,7 +55,7 @@ const filteredVideos = videos.filter((video: any) => {
     );
   }
 
-  if (currentGoal === "Reduce Stress") {
+  if (fitnessGoal === "Reduce Stress") {
     return (
       video.title.toLowerCase().includes("yoga") ||
       video.title.toLowerCase().includes("stretch") ||
@@ -92,7 +93,7 @@ const filteredVideos = videos.filter((video: any) => {
         </button>
         <h1 className="text-sky-900 mb-2">Workout Videos</h1>
         <p className="text-sky-600">
-          Recommended for your goal: <strong>{currentGoal}</strong>
+          Recommended for your goal: <strong>{fitnessGoal}</strong>
         </p>
       </div>
 

@@ -168,14 +168,14 @@ console.log(localStorage.getItem("token"));
             </div>
 
             {/* Forgot Password */}
-            <div className="text-right">
+            {/* <div className="text-right">
               <button
                 type="button"
                 className="text-sm text-sky-600 dark:text-sky-400 hover:text-sky-900 dark:hover:text-sky-300 transition-colors"
               >
                 {language === 'en' ? 'Forgot password?' : 'نسيت كلمة المرور؟'}
               </button>
-            </div>
+            </div> */}
 
             {/* Submit Button */}
             <button
@@ -188,7 +188,7 @@ console.log(localStorage.getItem("token"));
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          {/* <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-sky-100 dark:border-gray-700" />
             </div>
@@ -197,10 +197,10 @@ console.log(localStorage.getItem("token"));
                 {language === 'en' ? 'Or continue with' : 'أو تابع باستخدام'}
               </span>
             </div>
-          </div>
+          </div> */}
 
           {/* Social Login */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handleSocialLogin('Google')}
               className="px-4 py-3 rounded-2xl bg-sky-50 dark:bg-gray-700 hover:bg-sky-100 dark:hover:bg-gray-600 text-sky-900 dark:text-white transition-all flex items-center justify-center gap-2"
@@ -237,7 +237,7 @@ console.log(localStorage.getItem("token"));
               </svg>
               <span>Apple</span>
             </button>
-          </div>
+          </div> */}
 
           {/* Sign Up Link */}
           <div className="mt-6 text-center text-sm text-sky-600 dark:text-gray-400">

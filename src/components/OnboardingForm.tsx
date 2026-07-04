@@ -31,7 +31,7 @@ interface OnboardingData {
 
 export function OnboardingForm() {
   const navigate = useNavigate();
-  const { darkMode, language } = useApp();
+  const { darkMode, language, setFitnessGoal } = useApp();
   const t = translations[language].onboarding;
   const tCommon = translations[language];
   
@@ -201,6 +201,7 @@ export function OnboardingForm() {
     await createUserProfile(payload);
 
     const result = await getOnboardingResult();
+    setFitnessGoal(result.goal);
 
     localStorage.setItem(
       "userRecommendations",

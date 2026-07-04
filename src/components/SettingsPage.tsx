@@ -5,7 +5,7 @@ import { notifications } from '../utils/notifications';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
 import { ShareProgressModal } from './ShareProgressModal';
-
+import { getGoals, updateGoals } from "../services/userGoalService";
 export function SettingsPage() {
   const navigate = useNavigate();
   const { darkMode, language, setDarkMode, setLanguage } = useApp();
@@ -46,35 +46,47 @@ export function SettingsPage() {
     // Profile
     name: userName,
     email: userEmail,
-    
     // Notifications
     waterReminders: localStorage.getItem('waterReminders') !== 'false',
     mealReminders: localStorage.getItem('mealReminders') !== 'false',
     workoutReminders: localStorage.getItem('workoutReminders') !== 'false',
     
     // Goals
-    dailyWaterGoal: parseInt(localStorage.getItem('dailyWaterGoal') || '2000'),
-    dailyCalorieGoal: parseInt(localStorage.getItem('dailyCalorieGoal') || '2000'),
-    dailyStepsGoal: parseInt(localStorage.getItem('dailyStepsGoal') || '10000'),
-    dailyCardioGoal: parseInt(localStorage.getItem('dailyCardioGoal') || '30'),
+    dailyWaterGoal: 0,
+    dailyCalorieGoal: 0,
+    dailyStepsGoal: 10000, // أو ثابته لو ملهاش API
+    dailyCardioGoal: 0,
   });
+  const loadGoals = async () => {
+    const { data } = await getGoals();
+    
+    setSettings(prev => ({
+      ...prev,
+      dailyWaterGoal: data.waterGoal,
+      dailyCalorieGoal: data.caloriesGoal,
+      dailyCardioGoal: data.activityGoal,
+    }));
+};
 
-  const handleSave = () => {
-    // Save to localStorage
-    localStorage.setItem('userName', settings.name);
-    localStorage.setItem('waterReminders', settings.waterReminders.toString());
-    localStorage.setItem('mealReminders', settings.mealReminders.toString());
-    localStorage.setItem('workoutReminders', settings.workoutReminders.toString());
-    localStorage.setItem('dailyWaterGoal', settings.dailyWaterGoal.toString());
-    localStorage.setItem('dailyCalorieGoal', settings.dailyCalorieGoal.toString());
-    localStorage.setItem('dailyStepsGoal', settings.dailyStepsGoal.toString());
-    localStorage.setItem('dailyCardioGoal', settings.dailyCardioGoal.toString());
+useEffect(() => {
+  loadGoals();
+}, []);
+const handleSave = async () => {
+  // Save to localStorage
+  localStorage.setItem(
+    "stepsGoal",
+  settings.dailyStepsGoal.toString()
+);
+ await updateGoals({
+  waterGoal: settings.dailyWaterGoal,
+  caloriesGoal: settings.dailyCalorieGoal,
+  activityGoal: settings.dailyCardioGoal,
+});
 
-    notifications.settingsSaved();
+notifications.settingsSaved();
   };
-
-  return (
-    <div className="min-h-screen p-4 md:p-8 pb-24 md:pb-8">
+return (
+  <div className="min-h-screen p-4 md:p-8 pb-24 md:pb-8">
       {/* Header */}
       <div className="mb-8">
         <button
@@ -213,9 +225,9 @@ export function SettingsPage() {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm text-sky-700 dark:text-sky-300">{t('waterGoal', language)}</label>
-                <span className="text-xs text-mint-600 dark:text-mint-400">
+                {/* <span className="text-xs text-mint-600 dark:text-mint-400">
                   {t('currentAverage', language)}: {averages.water} ml
-                </span>
+                </span> */}
               </div>
               <input
                 type="number"
@@ -241,7 +253,7 @@ export function SettingsPage() {
               />
             </div>
 
-            <div>
+            {/* <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm text-sky-700 dark:text-sky-300">{t('stepsGoal', language)}</label>
                 <span className="text-xs text-mint-600 dark:text-mint-400">
@@ -251,20 +263,21 @@ export function SettingsPage() {
               <input
                 type="number"
                 value={settings.dailyStepsGoal}
-                onChange={(e) => setSettings({ ...settings, dailyStepsGoal: parseInt(e.target.value) || 10000 })}
+                onChange={(e) => setSettings({ ...settings, dailyStepsGoal:
+Number(localStorage.getItem("stepsGoal")) || 10000 })}
                 className="w-full px-4 py-3 rounded-2xl bg-sky-50 dark:bg-gray-700 border border-sky-100 dark:border-gray-600 text-sky-900 dark:text-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-300 dark:focus:ring-sky-600"
                 min="1000"
                 max="30000"
                 step="1000"
               />
-            </div>
+            </div> */}
 
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm text-sky-700 dark:text-sky-300">{t('cardioGoal', language)}</label>
-                <span className="text-xs text-mint-600 dark:text-mint-400">
+                {/* <span className="text-xs text-mint-600 dark:text-mint-400">
                   {t('currentAverage', language)}: {averages.cardio} {t('min', language)}
-                </span>
+                </span> */}
               </div>
               <input
                 type="number"

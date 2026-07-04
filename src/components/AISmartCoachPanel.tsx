@@ -2,155 +2,148 @@ import { Brain, Target, Clock, Flame, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
-import {getGoals , setDefaultGoals , updateGoals } from '../services/userGoalService'
+import { getGoals, setDefaultGoals, updateGoals } from '../services/userGoalService'
 // import { generateRecommendation } from "../services/coachService";
 import { useEffect, useState } from 'react';
-interface AISmartCoachPanelProps {
-  currentGoal: string;
-}
 
-export function AISmartCoachPanel({ currentGoal }: AISmartCoachPanelProps) {
+export function AISmartCoachPanel() {
   const { language, fitnessGoal } = useApp();
-  const [goal,setGoal]=useState<any>(null);
-const [loading,setLoading]=useState(true);
+  const [goal, setGoal] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-const [saving,setSaving]=useState(false);
+  const [saving, setSaving] = useState(false);
   const [todayPlan, setTodayPlan] = useState<any>(null);
   // Get personalized data from onboarding
   const activityLevel = localStorage.getItem('userActivityLevel') || 'moderate';
   // const fitnessGoal = localStorage.getItem('userFitnessGoal') || 'stayFit';
   const healthConditions = JSON.parse(localStorage.getItem('userHealthConditions') || '[]');
+
   const loadGoal = async () => {
-   try{
-
-      const {data}=await getGoals();
-
+    try {
+      const { data } = await getGoals();
       setGoal(data);
-
-   }catch{
-    await setDefaultGoals();
-    const {data}=await getGoals();
-    setGoal(data);}finally{
-
-      setLoading(false);}
-}
-const saveGoals=async()=>{
-
-setSaving(true);
-
-try{
-
-await updateGoals({
-
-caloriesGoal:goal.caloriesGoal,
-
-waterGoal:goal.waterGoal,
-
-activityGoal:goal.activityGoal
-
-});
-
-alert("Goals Updated");
-
-}
-
-finally{
-
-setSaving(false);
-
-}
-
-}
-
-useEffect(() => {
- const goal = fitnessGoal;
-
-  if (!goal) return;
-
-  switch (goal) {
-    case "Lose Weight":
-      setTodayPlan({
-        workout: "Running",
-        duration: 30,
-        calories: 300,
-        message: "Today's focus is burning fat with cardio.",
-      });
-      break;
-
-    case "Gain Muscle":
-      setTodayPlan({
-        workout: "Upper Body Strength",
-        duration: 45,
-        calories: 250,
-        message: "Focus on strength and progressive overload.",
-      });
-      break;
-
-    case "Walk & Stay Active":
-      setTodayPlan({
-        workout: "Brisk Walking",
-        duration: 40,
-        calories: 180,
-        message: "Stay active and reach your daily step goal.",
-      });
-      break;
-
-    case "Stay Healthy":
-      setTodayPlan({
-        workout: "Full Body Workout",
-        duration: 35,
-        calories: 220,
-        message: "A balanced workout for overall health.",
-      });
-      break;
-
-    case "Improve Fitness":
-      setTodayPlan({
-        workout: "HIIT",
-        duration: 30,
-        calories: 320,
-        message: "Improve endurance with interval training.",
-      });
-      break;
-
-    case "Reduce Stress":
-      setTodayPlan({
-        workout: "Yoga",
-        duration: 25,
-        calories: 120,
-        message: "Relax your body and reduce stress.",
-      });
-      break;
-
-    case "Rehabilitation":
-      setTodayPlan({
-        workout: "Mobility Exercises",
-        duration: 20,
-        calories: 90,
-        message: "Gentle recovery exercises for mobility.",
-      });
-      break;
-
-    case "Event Preparation":
-      setTodayPlan({
-        workout: "Sport Specific Training",
-        duration: 60,
-        calories: 450,
-        message: "Prepare for your upcoming event.",
-      });
-      break;
+    } catch {
+      await setDefaultGoals();
+      const { data } = await getGoals();
+      setGoal(data);
+    } finally {
+      setLoading(false);
+    }
   }
-}, []);
-useEffect(() => {
-  loadGoal()
-}, []);
-// const todayPlan = {
-//   workout: "Running",
-//   duration: goal?.activityGoal ?? 30,
-//   calories: Math.round((goal?.activityGoal ?? 30) * 8),
-//   message: "Today's goal is to stay active and complete your workout."
-// };
-if (!todayPlan) return null;
+
+  const saveGoals = async () => {
+    setSaving(true);
+    try {
+      await updateGoals({
+        caloriesGoal: goal.caloriesGoal,
+        waterGoal: goal.waterGoal,
+        activityGoal: goal.activityGoal
+      });
+      alert("Goals Updated");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  useEffect(() => {
+    const goal = fitnessGoal;
+
+    if (!goal) return;
+
+    switch (goal) {
+      case "Lose Weight":
+        setTodayPlan({
+          workout: "Running",
+          duration: 30,
+          calories: 300,
+          message: "Today's focus is burning fat with cardio.",
+        });
+        break;
+
+      case "Gain Muscle":
+        setTodayPlan({
+          workout: "Upper Body Strength",
+          duration: 45,
+          calories: 250,
+          message: "Focus on strength and progressive overload.",
+        });
+        break;
+
+      case "Walk & Stay Active":
+        setTodayPlan({
+          workout: "Brisk Walking",
+          duration: 40,
+          calories: 180,
+          message: "Stay active and reach your daily step goal.",
+        });
+        break;
+
+      case "Stay Healthy":
+        setTodayPlan({
+          workout: "Full Body Workout",
+          duration: 35,
+          calories: 220,
+          message: "A balanced workout for overall health.",
+        });
+        break;
+
+      case "Improve Fitness":
+        setTodayPlan({
+          workout: "HIIT",
+          duration: 30,
+          calories: 320,
+          message: "Improve endurance with interval training.",
+        });
+        break;
+
+      case "Reduce Stress":
+        setTodayPlan({
+          workout: "Yoga",
+          duration: 25,
+          calories: 120,
+          message: "Relax your body and reduce stress.",
+        });
+        break;
+
+      case "Rehabilitation":
+        setTodayPlan({
+          workout: "Mobility Exercises",
+          duration: 20,
+          calories: 90,
+          message: "Gentle recovery exercises for mobility.",
+        });
+        break;
+
+      case "Event Preparation":
+        setTodayPlan({
+          workout: "Sport Specific Training",
+          duration: 60,
+          calories: 450,
+          message: "Prepare for your upcoming event.",
+        });
+        break;
+    }
+  }, [fitnessGoal]);
+
+  useEffect(() => {
+    loadGoal();
+  }, []);
+
+  // const todayPlan = {
+  //   workout: "Running",
+  //   duration: goal?.activityGoal ?? 30,
+  //   calories: Math.round((goal?.activityGoal ?? 30) * 8),
+  //   message: "Today's goal is to stay active and complete your workout."
+  // };
+
+  if (!todayPlan) {
+    return (
+      <div className="bg-yellow-100 rounded-2xl p-6 mb-6">
+        Loading AI Coach...
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card rounded-3xl p-6 shadow-sm mb-8 border border-sky-100/50 dark:border-gray-700/50 transition-colors duration-300">
       {/* Header */}
@@ -177,13 +170,13 @@ if (!todayPlan) return null;
           <Target className="w-5 h-5 text-sky-600 dark:text-sky-400" />
           <p className="text-sm text-sky-600 dark:text-sky-400">{language === 'en' ? 'Your Current Goal' : 'هدفك الحالي'}</p>
         </div>
-        <p className="text-xl text-sky-900 dark:text-sky-100 font-bold">{fitnessGoal || currentGoal}</p>
+        <p className="text-xl text-sky-900 dark:text-sky-100 font-bold">{fitnessGoal}</p>
       </div>
 
       {/* Today's Recommendation */}
       <div className="border-t border-sky-100 dark:border-gray-700 pt-6">
         <p className="text-sm text-sky-600 dark:text-sky-400 mb-4">{language === 'en' ? 'Recommended for Today' : 'موصى به لليوم'}</p>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Workout Type */}
           <div className="bg-sky-50 dark:bg-gray-800/50 rounded-2xl p-4 border border-sky-100/20 dark:border-gray-700/20">
@@ -192,8 +185,6 @@ if (!todayPlan) return null;
           </div>
 
           {/* Duration */}
-
-
           <div className="bg-sky-50 dark:bg-gray-800/50 rounded-2xl p-4 border border-sky-100/20 dark:border-gray-700/20" title="Recommended workout duration">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-sky-600 dark:text-sky-400" />
@@ -211,11 +202,12 @@ if (!todayPlan) return null;
             <p className="text-sky-900 dark:text-sky-100 font-medium">{todayPlan.calories} {t('kcal', language)}</p>
           </div>
         </div>
+
         {/* AI Message */}
         <div className="bg-gradient-to-r from-sky-100 to-sky-50 dark:from-sky-900/30 dark:to-gray-800/30 rounded-2xl p-4 mb-4 border border-sky-100/50 dark:border-sky-800/50">
           <p className="text-sky-900 dark:text-sky-100">
-  💡 {todayPlan.message}
-</p>
+            💡 {todayPlan.message}
+          </p>
         </div>
 
         {/* Start Button */}

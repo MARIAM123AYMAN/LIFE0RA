@@ -3,6 +3,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface AppContextType {
   darkMode: boolean;
   language: 'en' | 'ar';
+  selectedDate: string;
+  setSelectedDate: React.Dispatch<React.SetStateAction<string>>;
+
   fitnessGoal: string;
   setFitnessGoal: React.Dispatch<React.SetStateAction<string>>;
   toggleDarkMode: () => void;
@@ -20,6 +23,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [fitnessGoal, setFitnessGoal] = useState(
   localStorage.getItem("fitnessGoal") || ""
 );
+const [selectedDate, setSelectedDate] = useState(
+  new Date().toISOString().split("T")[0]
+);
   
   const [language, setLanguageState] = useState<'en' | 'ar'>(() => {
     return (localStorage.getItem('language') as 'en' | 'ar') || 'en';
@@ -34,7 +40,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     localStorage.setItem('darkMode', darkMode.toString());
   }, [darkMode]);
-
+useEffect(() => {
+  localStorage.setItem("fitnessGoal", fitnessGoal);
+}, [fitnessGoal]);
   useEffect(() => {
     // Apply RTL direction for Arabic
     if (language === 'ar') {
@@ -68,6 +76,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       darkMode, 
       language, 
         fitnessGoal,
+         selectedDate,
+    setSelectedDate,
     setFitnessGoal,
       toggleDarkMode, 
       toggleLanguage,

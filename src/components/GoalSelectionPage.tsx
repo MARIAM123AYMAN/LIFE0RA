@@ -77,6 +77,8 @@ export function GoalSelectionPage() {
        setFitnessGoal(goalData.name);
 localStorage.setItem("fitnessGoal", goalData.name);
 localStorage.setItem("fitnessGoalId", goalData.id);
+setFitnessGoal(goalData.name);
+// AppContext هيحفظه في localStorage تلقائيًا
         notifications.goalSet(goalData.name);
         navigate('/sports');
       }

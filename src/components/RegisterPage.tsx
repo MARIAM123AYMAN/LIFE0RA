@@ -4,7 +4,8 @@ import { Mail, Lock, Eye, EyeOff, User, Droplets } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { t } from '../utils/translations';
 import logo from "../assets/pro_grad.png";
-
+import Confetti from "react-confetti";
+const BASE_URL = "http://balancelifeapp.runasp.net/api/Authentication";
 export function RegisterPage() {
   const navigate = useNavigate();
   const { language } = useApp();
@@ -34,44 +35,84 @@ export function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError(language === 'en' ? 'Password must be at least 6 characters' : 'يجب أن تكون كلمة المرور 6 أحرف على الأقل');
-      return;
-    }
+// Password length
+if (formData.password.length < 6) {
+  setError(
+    language === "en"
+      ? "Password must be at least 6 characters"
+      : "يجب أن تكون كلمة المرور 6 أحرف على الأقل"
+  );
+  return;
+}
+
+// Password validation
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{6,}$/;
+
+if (!passwordRegex.test(formData.password)) {
+  setError(
+    language === "en"
+      ? "Password must contain uppercase, lowercase and special character."
+      : "يجب أن تحتوي كلمة المرور على حرف كبير وحرف صغير ورمز."
+  );
+  return;
+}
 
     setIsLoading(true);
 
-    // Check if user already exists
-    const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    const userExists = existingUsers.find((u: any) => u.email === formData.email);
-    
-    if (userExists) {
-      setError(language === 'en' ? 'Email already registered. Please login instead.' : 'البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.');
-      setIsLoading(false);
-      return;
-    }
+try {
+  // Check email exists
+  const checkResponse = await fetch(
+    `${BASE_URL}/emailExists?email=${encodeURIComponent(formData.email)}`
+  );
 
-    // Simulate registration
-    setTimeout(() => {
-      // Store user in registered users list
-      const newUser = {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password, // In production, this should be hashed!
-        registeredAt: new Date().toISOString(),
-      };
-      
-      existingUsers.push(newUser);
-      localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-      
-      // Auto-login the user
-      localStorage.setItem('userName', formData.name);
-      localStorage.setItem('userEmail', formData.email);
-      localStorage.setItem('isLoggedIn', 'true');
-      
-      navigate('/onboarding');
-      setIsLoading(false);
-    }, 1000);
+  const emailExists = await checkResponse.json();
+
+  if (emailExists) {
+    setError(
+      language === "en"
+        ? "Email already registered"
+        : "البريد الإلكتروني مستخدم بالفعل"
+    );
+    setIsLoading(false);
+    return;
+  }
+
+  // Register
+  const response = await fetch(`${BASE_URL}/Register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: formData.email,
+      displayName: formData.name,
+      userName: formData.name,
+      password: formData.password,
+    }),
+  });
+
+  const data = await response.json();
+if (!response.ok) {
+  const message =
+    data.errors
+      ? Object.values(data.errors).flat().join("\n")
+      : data.title || "Register Failed";
+
+  throw new Error(message);
+}
+
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userEmail", data.email);
+  localStorage.setItem("userName", data.displayName);
+  localStorage.setItem("isLoggedIn", "true");
+
+  navigate("/onboarding");
+}catch (err: any) {
+  setError(err.message);
+} finally {
+  setIsLoading(false);
+}
   };
 
   const handleSocialSignup = (provider: string) => {
@@ -94,7 +135,9 @@ export function RegisterPage() {
   };
 
   return (
+    
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-mint-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4 transition-colors duration-300">
+      
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -202,13 +245,13 @@ export function RegisterPage() {
             {/* Terms */}
             <div className="text-xs text-sky-600 dark:text-gray-400">
               {language === 'en' ? 'By signing up, you agree to our ' : 'بالتسجيل، أنت توافق على '}
-              <button type="button" className="text-sky-900 dark:text-sky-400 hover:underline">
+              {/* <button type="button" className="text-sky-900 dark:text-sky-400 hover:underline">
                 {language === 'en' ? 'Terms of Service' : 'شروط الخدمة'}
-              </button>{' '}
+              </button>{' '} */}
               {language === 'en' ? 'and ' : 'و '}
-              <button type="button" className="text-sky-900 dark:text-sky-400 hover:underline">
+              <Link to="/privacy" className="text-sky-900 dark:text-sky-400 text-xl hover:underline">
                 {language === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية'}
-              </button>
+              </Link>
             </div>
 
             {/* Submit Button */}
@@ -222,7 +265,7 @@ export function RegisterPage() {
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          {/* <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-sky-100 dark:border-gray-700" />
             </div>
@@ -231,10 +274,10 @@ export function RegisterPage() {
                 {language === 'en' ? 'Or sign up with' : 'أو سجل باستخدام'}
               </span>
             </div>
-          </div>
+          </div> */}
 
           {/* Social Signup */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handleSocialSignup('Google')}
               className="px-4 py-3 rounded-2xl bg-sky-50 dark:bg-gray-700 hover:bg-sky-100 dark:hover:bg-gray-600 text-sky-900 dark:text-white transition-all flex items-center justify-center gap-2 shadow-sm"
@@ -271,7 +314,7 @@ export function RegisterPage() {
               </svg>
               <span>Apple</span>
             </button>
-          </div>
+          </div> */}
 
           {/* Login Link */}
           <div className="mt-6 text-center text-sm text-sky-600 dark:text-gray-400">

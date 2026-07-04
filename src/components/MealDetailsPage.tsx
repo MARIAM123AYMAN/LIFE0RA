@@ -10,103 +10,131 @@ import { t } from '../utils/translations';
 export function MealDetailsPage() {
   const { language } = useApp();
   const { mealType } = useParams();
-const userEmail = localStorage.getItem("userEmail");
+  const userEmail = localStorage.getItem("userEmail");
 
-const [selectedDate, setSelectedDate] =
-  useState(
-    localStorage.getItem("selectedDate") ||
-    new Date().toISOString().split("T")[0]
+  // Retrieve selected date with fallback to today's date string
+  const [selectedDate, setSelectedDate] = useState(
+    localStorage.getItem("selectedDate") || new Date().toISOString().split("T")[0]
   );
 
-const mealsKey =
-`${mealType}Meals_${userEmail}_${selectedDate}`;
-console.log("DETAILS KEY:", mealsKey);
-console.log(
-  "DETAILS DATA:",
-  localStorage.getItem(mealsKey)
-);
-console.log("DATE =", selectedDate);
-console.log("KEY =", mealsKey);
+  // Define unique composite key for current user, meal type, and date
+  const mealsKey = `${mealType}Meals_${userEmail}_${selectedDate}`;
+
+  console.log("DETAILS KEY:", mealsKey);
+  console.log("DETAILS DATA:", localStorage.getItem(mealsKey));
+  console.log("DATE =", selectedDate);
+  console.log("KEY =", mealsKey);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [meals, setMeals] = useState<any[]>([]);
 
+  // Get specific meal settings dynamically based on route params
   const getMealInfo = (type: string | undefined) => {
     switch (type) {
-     case 'breakfast':
-  return {
-    name: t('breakfast', language),
-    icon: Coffee,
-    color: 'from-amber-400 to-orange-400',
-    target: 500,
-  };
+      case 'breakfast':
+        return {
+          name: t('breakfast', language),
+          icon: Coffee,
+          color: 'from-amber-400 to-orange-400',
+          target: 500,
+        };
       case 'lunch':
-        return { name: 'Lunch', icon: Sun, color: 'from-sky-400 to-blue-400', target: 700 };
+        return { 
+          name: 'Lunch', 
+          icon: Sun, 
+          color: 'from-sky-400 to-blue-400', 
+          target: 700 
+        };
       case 'dinner':
-        return { name: 'Dinner', icon: Moon, color: 'from-purple-400 to-pink-400', target: 600 };
+        return { 
+          name: 'Dinner', 
+          icon: Moon, 
+          color: 'from-purple-400 to-pink-400', 
+          target: 600 
+        };
       default:
-        return { name: 'Meal', icon: Coffee, color: 'from-sky-400 to-mint-400', target: 600 };
+        return { 
+          name: 'Meal', 
+          icon: Coffee, 
+          color: 'from-sky-400 to-mint-400', 
+          target: 600 
+        };
     }
   };
 
   const mealInfo = getMealInfo(mealType);
   const Icon = mealInfo.icon;
 
+  // Compute calculated nutrition accumulated values
   const totalCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
   const totalProtein = meals.reduce((sum, meal) => sum + meal.protein, 0);
   const totalCarbs = meals.reduce((sum, meal) => sum + meal.carbs, 0);
   const totalFats = meals.reduce((sum, meal) => sum + meal.fats, 0);
 
-const handleAddMeal = (newMeal: any) => {
-  const updatedMeals = [...meals,{...newMeal,id: Date.now(),},];
-  setMeals(updatedMeals);
-  console.log("DETAIL SAVE KEY =", mealsKey);
-  localStorage.setItem(
-    mealsKey,
-    JSON.stringify(updatedMeals)
-  );
-  setIsModalOpen(false);
-  notifications.mealAdded(
-    newMeal.name,
-    newMeal.calories
-  );
-  const totalCals = updatedMeals.reduce(
-    (sum, meal) => sum + meal.calories,0);
-  localStorage.setItem("dailyCalories",totalCals.toString());};
-// delete
-  const handleDeleteMeal = (mealId: number) => {
-  const mealToDelete = meals.find((m) => m.id === mealId);
-  const updatedMeals = meals.filter((meal) => meal.id !== mealId);
-  setMeals(updatedMeals);
-  localStorage.setItem(mealsKey,JSON.stringify(updatedMeals));
-  if (mealToDelete) {
-    notifications.mealDeleted(
-      mealToDelete.name
-    );
-  }
-  const totalCals = updatedMeals.reduce((sum, meal) => sum + meal.calories,0);
-  localStorage.setItem("dailyCalories",totalCals.toString());};
-//  data
-  useEffect(() => {
-        const savedMeals = JSON.parse(
-        localStorage.getItem(mealsKey) || "[]"
-        );
+  // Recalculate global daily calories across all meals
+  const updateDailyCalories = () => {
+    const breakfast = JSON.parse(localStorage.getItem(`breakfastMeals_${userEmail}_${selectedDate}`) || "[]");
+    const lunch = JSON.parse(localStorage.getItem(`lunchMeals_${userEmail}_${selectedDate}`) || "[]");
+    const dinner = JSON.parse(localStorage.getItem(`dinnerMeals_${userEmail}_${selectedDate}`) || "[]");
 
-  setMeals(savedMeals);
-}, [mealsKey]);
-  //  time line
-const timelineData = meals.map((meal, index) => ({
-  meal: meal.name,
-  calories: meal.calories,
-}));
-console.log(mealsKey);
-console.log(
-  "DETAILS DATE",
-  localStorage.getItem("selectedDate")
-);
-return (
-    <div className="min-h-screen p-4 md:p-8">
-      {/* Header */}
+    const computedTotal = [...breakfast, ...lunch, ...dinner].reduce(
+      (sum, meal) => sum + meal.calories,
+      0
+    );
+
+    localStorage.setItem("dailyCalories", computedTotal.toString());
+  };
+
+  // Triggered handler when saving a new meal item
+  const handleAddMeal = (newMeal: any) => {
+    const updatedMeals = [...meals, { ...newMeal, id: Date.now() }];
+    setMeals(updatedMeals);
+    
+    console.log("DETAIL SAVE KEY =", mealsKey);
+    localStorage.setItem(mealsKey, JSON.stringify(updatedMeals));
+    setIsModalOpen(false);
+    
+    // Fire user push notifications alert
+    notifications.mealAdded(newMeal.name, newMeal.calories);
+    
+    // Sync total counts to parent keys
+    updateDailyCalories();
+  };
+
+  // Triggered handler when deleting a meal record item
+  const handleDeleteMeal = (mealId: number) => {
+    const mealToDelete = meals.find((m) => m.id === mealId);
+    const updatedMeals = meals.filter((meal) => meal.id !== mealId);
+    
+    setMeals(updatedMeals);
+    localStorage.setItem(mealsKey, JSON.stringify(updatedMeals));
+    
+    if (mealToDelete) {
+      notifications.mealDeleted(mealToDelete.name);
+    }
+
+    // Sync total counts to parent keys
+    updateDailyCalories();
+  };
+
+  // Fetch contextual raw local data sync upon component layout mounting
+  useEffect(() => {
+    const savedMeals = JSON.parse(localStorage.getItem(mealsKey) || "[]");
+    setMeals(savedMeals);
+  }, [mealsKey]);
+
+  // Construct structured dataset format map array for analytic tracking maps
+  const timelineData = meals.map((meal) => ({
+    meal: meal.name,
+    calories: meal.calories,
+  }));
+
+  console.log(mealsKey);
+  console.log("DETAILS DATE", localStorage.getItem("selectedDate"));
+
+  return (
+    <div className="min-h-screen p-4 md:p-8 bg-background">
+      {/* Header Navigation Link & Meta Row */}
       <div className="mb-8">
         <Link
           to="/"
@@ -138,7 +166,7 @@ return (
           </button>
         </div>
 
-        {/* Progress Summary */}
+        {/* Macros and Progress Grid Summary Card */}
         <div className="mt-6 bg-gradient-to-r from-sky-100 to-mint-100 rounded-3xl p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
@@ -148,26 +176,26 @@ return (
             </div>
             <div>
               <p className="text-xs text-sky-700 mb-2">Protein</p>
-              <p className="text-2xl text-sky-900"> {Number(totalProtein.toFixed(1))}</p>
+              <p className="text-2xl text-sky-900">{Number(totalProtein.toFixed(1))}</p>
               <p className="text-xs text-sky-600">grams</p>
             </div>
             <div>
               <p className="text-xs text-sky-700 mb-2">Carbs</p>
-              <p className="text-2xl text-sky-900">  {Number(totalCarbs.toFixed(1))}</p>
+              <p className="text-2xl text-sky-900">{Number(totalCarbs.toFixed(1))}</p>
               <p className="text-xs text-sky-600">grams</p>
             </div>
             <div>
               <p className="text-xs text-sky-700 mb-2">Fats</p>
-              <p className="text-2xl text-sky-900">  {Number(totalFats.toFixed(1))}</p>
+              <p className="text-2xl text-sky-900">{Number(totalFats.toFixed(1))}</p>
               <p className="text-xs text-sky-600">grams</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content: Meals List + Charts */}
+      {/* Main Content Split Zone: Meals List View vs Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Meals List */}
+        {/* Active Added Eaten Meals List */}
         <div>
           <h2 className="text-sky-900 mb-4">{t("eatenMeals", language)}</h2>
           <div className="space-y-3">
@@ -201,15 +229,15 @@ return (
                     </div>
                     <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50">
                       <p className="text-xs text-sky-700 mb-1">Protein</p>
-                      <p className="text-sky-900">  {Number(meal.protein?.toFixed?.(1) ?? meal.protein)}g</p>
+                      <p className="text-sky-900">{Number(meal.protein?.toFixed?.(1) ?? meal.protein)}g</p>
                     </div>
                     <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50">
                       <p className="text-xs text-green-700 mb-1">Carbs</p>
-                      <p className="text-green-900">  {Number(meal.carbs?.toFixed?.(1) ?? meal.carbs)}g</p>
+                      <p className="text-green-900">{Number(meal.carbs?.toFixed?.(1) ?? meal.carbs)}g</p>
                     </div>
                     <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50">
                       <p className="text-xs text-purple-700 mb-1">Fats</p>
-                      <p className="text-purple-900">  {Number(meal.fats?.toFixed?.(1) ?? meal.fats)}g</p>
+                      <p className="text-purple-900">{Number(meal.fats?.toFixed?.(1) ?? meal.fats)}g</p>
                     </div>
                   </div>
                 </div>
@@ -218,18 +246,18 @@ return (
           </div>
         </div>
 
-        {/* Nutrition Charts */}
+        {/* Graphical Representation Statistics Component */}
         <NutritionCharts
-            totalCalories={totalCalories}
-            targetCalories={mealInfo.target}
-            protein={totalProtein}
-            carbs={totalCarbs}
-            fats={totalFats}
-            timelineData={timelineData}
+          totalCalories={totalCalories}
+          targetCalories={mealInfo.target}
+          protein={totalProtein}
+          carbs={totalCarbs}
+          fats={totalFats}
+          timelineData={timelineData}
         />
       </div>
 
-      {/* Add Meal Modal */}
+      {/* Structured Item Modal View Pop */}
       <AddMealModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

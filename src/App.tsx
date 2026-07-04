@@ -22,6 +22,7 @@ import { SettingsPage } from './components/SettingsPage';
 import { GlobalNotificationSystem } from './components/GlobalNotificationSystem';
 import { RandomHealthTips } from './components/RandomHealthTips';
 import { AppProvider } from './contexts/AppContext';
+import PrivacyPage from "./components/PrivacyPage";
 import { ChatbotUI } from './components/ChatbotUI';
 // import { CoachChatPage } from './components/CoachChatPage';
 
@@ -90,7 +91,8 @@ export default function App() {
                       <Route path="/sports/timer" element={<ActivityTimerPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                       <Route path="//sports/activity" element={<ActivityTimerPage />} />
-                      {/* <Route path="/chatBot" element={<CoachChatPage />} /> */}
+                      <Route path="/privacy" element={<PrivacyPage />} />
+                       {/* <Route path="/chatBot" element={<CoachChatPage />} /> */}
                     </Routes>
                   </div>
 
